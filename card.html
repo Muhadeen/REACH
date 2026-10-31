@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contact card · REACH</title>
+<link rel="icon" href="favicon.png" type="image/png">
+
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+.page{max-width:480px;margin:auto;padding:18px 16px 40px}
+.hd{background:var(--grad);color:#fff;border-radius:28px;padding:30px 22px 26px;text-align:center;position:relative;overflow:hidden}
+.hd::before{content:"";position:absolute;width:260px;height:260px;border-radius:50%;background:rgba(255,255,255,.18);right:-90px;top:-120px}
+.hd>*{position:relative}
+.big{width:92px;height:92px;border-radius:50%;background:#fff;color:var(--ink);display:grid;place-items:center;font:800 2.4rem "Bricolage Grotesque";margin:0 auto 14px;border:5px solid rgba(255,255,255,.55);color:#2563ff}
+.hd h1{font-size:1.9rem;font-weight:800}.hd p{opacity:.8;font-weight:600;margin-top:6px}
+.list{margin-top:18px}
+.item{box-shadow:0 12px 24px -20px rgba(37,99,255,.6);display:flex;align-items:center;gap:14px;padding:14px;background:#fff;border:1.5px solid var(--line);border-radius:20px;margin-bottom:10px;color:var(--ink);text-decoration:none;transition:transform .15s,border-color .15s}
+a.item:hover{transform:translateY(-2px);border-color:var(--ink)}
+.item .t{flex:1;min-width:0}.item b{display:block}.item span{color:var(--muted);font-weight:600;overflow-wrap:anywhere;font-size:.92rem}
+.item .go{font-weight:800;color:var(--a2)}
+.cp{border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:8px 12px;font:800 .8rem Manrope,system-ui,sans-serif;cursor:pointer}
+.cta{text-align:center;margin-top:22px;color:var(--muted);font-weight:700}.cta a{color:var(--a1);font-weight:800}
+</style></head><body>
+<div class="page" id="page"><div class="spin"></div></div>
+<script src="core.js"></script>
+<script>
+const uid=new URLSearchParams(location.search).get("u");
+function msg(t,s){$("#page").innerHTML=`<div class="card" style="text-align:center;margin-top:60px"><h2>${t}</h2><p class="sub">${s}</p><a class="btn accent" href="./">Create your own card</a></div>`}
+(async()=>{
+  if(!uid)return msg("No card here","This link is missing a card ID.");
+  try{
+    const {db}=await fb();const snap=await db.collection("users").doc(uid).get();
+    if(!snap.exists)return msg("Card not found","It may have been deleted, or the link is wrong.");
+    const d=snap.data(),pl=d.platforms||[];document.title=d.name+" · REACH";
+    $("#page").innerHTML=`
+     <div class="hd"><div class="big">${esc((d.name||"?")[0].toUpperCase())}</div><h1>${esc(d.name)}</h1>${d.bio?`<p>${esc(d.bio)}</p>`:""}</div>
+     <div class="list">${pl.length?pl.map(p=>{const href=linkFor(p.name,p.detail);
+       const inner=`${logo(p.name,48)}<div class="t"><b>${esc(displayName(p.name))}</b><span>${esc(p.detail)}</span></div>`;
+       return href?`<a class="item" href="${esc(href)}" target="_blank" rel="noopener">${inner}<span class="go">Open ↗</span></a>`
+        :`<div class="item">${inner}<button class="cp" data-c="${esc(p.detail)}">Copy</button></div>`}).join(""):'<div class="empty">No contact details added yet.</div>'}</div>
+     <button class="btn block" id="vc" style="margin-top:6px">➕ Save to my contacts</button>
+     <p class="cta">Want your own card? <a href="./">Make one free</a></p>`;
+    $$(".cp").forEach(b=>b.onclick=async()=>{try{await navigator.clipboard.writeText(b.dataset.c);toast("Copied ✓")}catch(e){toast(b.dataset.c)}});
+    $("#vc").onclick=()=>{const tel=pl.filter(p=>["Phone","WhatsApp"].includes(displayName(p.name))).map(p=>p.detail.replace(/[^\d+]/g,""));
+      const em=pl.filter(p=>["Email","Gmail"].includes(displayName(p.name))).map(p=>p.detail.trim());
+      const other=pl.filter(p=>!["Phone","WhatsApp","Email","Gmail"].includes(displayName(p.name)));
+      const v=["BEGIN:VCARD","VERSION:3.0","FN:"+d.name,"N:;"+d.name+";;;",...tel.map(t=>"TEL;TYPE=CELL:"+t),...em.map(e=>"EMAIL:"+e),
+        ...(d.bio?["TITLE:"+d.bio]:[]),...(other.length?["NOTE:"+other.map(p=>displayName(p.name)+": "+p.detail).join(" | ")]:[]),"END:VCARD"].join("\r\n");
+      const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([v],{type:"text/vcard"}));a.download=(d.name||"contact").replace(/\s+/g,"-")+".vcf";a.click()};
+    if(!sessionStorage.getItem("v_"+uid)){sessionStorage.setItem("v_"+uid,"1");db.collection("users").doc(uid).update({views:firebase.firestore.FieldValue.increment(1)}).catch(()=>{})}
+  }catch(e){console.error(e);msg("Couldn't load this card","Check your internet and try again.")}
+})();
+</script></body></html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex">
+<title>REACH · Admin</title>
+<link rel="icon" href="favicon.png" type="image/png">
+
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+.bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0}.bar input{flex:1 1 220px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.stat{border-radius:20px;padding:16px 18px;color:#fff;border:0}.stat:nth-child(1){background:linear-gradient(135deg,#1d4ed8,#4f8cff)}.stat:nth-child(2){background:linear-gradient(135deg,#ff4d9d,#ff8cc0)}.stat:nth-child(3){background:linear-gradient(135deg,#0ea5e9,#67d0ff)}.stat b{display:block;font:800 2rem "Bricolage Grotesque"}.stat small{font-weight:700;color:rgba(255,255,255,.92)}
+details{background:#fff;border:1.5px solid var(--line);border-radius:20px;margin-top:10px;overflow:hidden}
+summary{list-style:none;cursor:pointer;display:flex;gap:12px;align-items:center;padding:14px 16px}summary::-webkit-details-marker{display:none}
+.av{width:44px;height:44px;border-radius:50%;background:var(--grad);color:#fff;display:grid;place-items:center;font:800 1.15rem "Bricolage Grotesque";flex:none}
+summary .t{flex:1;min-width:0}summary b{display:block}summary span{color:var(--muted);font-weight:600;font-size:.88rem;overflow-wrap:anywhere}
+.inner{padding:0 16px 16px;border-top:1.5px solid var(--line)}
+.inner .row input{flex:1 1 130px;padding:10px 12px}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+#login{max-width:400px;margin:8vh auto}
+</style></head><body>
+<header class="top"><a class="brand" href="./"><img src="logo-mark.png" alt="">REACH ADMIN</a><button class="btn ghost hide" id="out">Log out</button></header>
+<div class="wrap">
+<div id="boot"><div class="spin"></div></div>
+
+<div id="login" class="card hide">
+  <h2>Admin login</h2><p class="sub">Only Muhadeen can enter.</p>
+  <form id="lf" novalidate><label for="em">Email</label><input id="em" type="email" autocomplete="email">
+  <label for="pw">Password</label><div class="pw"><input id="pw" type="password" autocomplete="current-password"><button type="button" id="sp">Show</button></div>
+  <p class="err" id="err"></p><button class="btn accent block" style="margin-top:8px">Log in</button><div style="text-align:center"><button type="button" class="link" id="fg">Forgot password?</button></div></form>
+</div>
+
+<div id="app" class="hide">
+  <div class="stats"><div class="stat"><b id="sU">0</b><small>Users</small></div><div class="stat"><b id="sP">0</b><small>Platforms added</small></div><div class="stat"><b id="sV">0</b><small>Card views</small></div></div>
+  <div class="bar"><input id="q" type="search" placeholder="Search by name, email or platform…"><button class="btn accent" id="xl">⬇ Download Excel</button><button class="btn ghost" id="rf">Refresh</button></div>
+  <div id="users"></div>
+</div>
+</div>
+<script src="core.js"></script>
+<script>
+let db,auth,users=[];
+function show(v){["boot","login","app"].forEach(x=>$("#"+x).classList.toggle("hide",x!==v));$("#out").classList.toggle("hide",v==="login"||v==="boot")}
+(async()=>{
+  try{const f=await fb();db=f.db;auth=f.auth}catch(e){$("#boot").innerHTML='<p class="err" style="text-align:center">Could not load. Refresh.</p>';return}
+  await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
+  auth.onAuthStateChanged(async u=>{
+    if(!u){show("login");return}
+    if((u.email||"").toLowerCase()!==ADMIN_EMAIL.toLowerCase()){await auth.signOut();$("#err").textContent="This account isn't allowed in the admin area.";show("login");return}
+    show("boot");await load();show("app")})
+})();
+$("#lf").onsubmit=async e=>{e.preventDefault();$("#err").textContent="";
+  try{await auth.signInWithEmailAndPassword($("#em").value.trim().toLowerCase(),$("#pw").value)}
+  catch(x){$("#err").className="err";$("#err").textContent=authMsg(x.code);const b=$("#login");b.classList.remove("shake");void b.offsetWidth;b.classList.add("shake")}};
+$("#sp").onclick=()=>{const i=$("#pw"),s=i.type==="password";i.type=s?"text":"password";$("#sp").textContent=s?"Hide":"Show"};
+$("#fg").onclick=async()=>{const em=$("#em").value.trim().toLowerCase(),e=$("#err");
+  if(!em){e.className="err";return e.textContent="Type your email above first."}
+  try{await auth.sendPasswordResetEmail(em)}catch(x){if(x.code==="auth/invalid-email"){e.className="err";return e.textContent=authMsg(x.code)}}
+  e.className="err ok";e.textContent="If that email has an account, a reset link is on its way. Check spam too."};
+$("#out").onclick=()=>auth.signOut();$("#rf").onclick=async()=>{await load();toast("Refreshed")};
+
+async function load(){
+  try{
+    const [us,ps]=await Promise.all([db.collection("users").get(),db.collection("private").get()]);
+    const priv={};ps.forEach(d=>priv[d.id]=d.data());
+    users=us.docs.map(d=>{const v=d.data(),p=priv[d.id]||{};return{id:d.id,name:v.name||p.name||"(no name)",email:p.email||"",bio:v.bio||"",platforms:v.platforms||[],views:v.views||0,createdAt:v.createdAt?v.createdAt.toMillis():0}})
+      .sort((a,b)=>b.createdAt-a.createdAt);
+    render();
+  }catch(e){console.error(e);$("#users").innerHTML='<div class="empty">Couldn\'t read data. Make sure the new Firestore rules are published.</div>'}}
+
+function render(){
+  const q=norm($("#q").value||"");
+  const list=users.filter(u=>!q||norm(u.name+u.email+u.platforms.map(p=>p.name+p.detail).join("")).includes(q));
+  $("#sU").textContent=users.length;$("#sP").textContent=users.reduce((a,u)=>a+u.platforms.length,0);$("#sV").textContent=users.reduce((a,u)=>a+u.views,0);
+  const open=new Set($$("details[open]").map(d=>d.dataset.id));
+  $("#users").innerHTML=list.length?list.map(u=>`<details data-id="${u.id}" ${open.has(u.id)?"open":""}>
+    <summary><div class="av">${esc(u.name[0].toUpperCase())}</div><div class="t"><b>${esc(u.name)}</b><span>${esc(u.email)} · ${u.platforms.length} platforms · ${u.views} views</span></div><span class="pill">View</span></summary>
+    <div class="inner">${u.platforms.length?u.platforms.map(p=>`<div class="row edit" data-uid="${u.id}" data-pid="${p.id}">${logo(p.name,40)}<input data-f="name" value="${esc(p.name)}"><input data-f="detail" value="${esc(p.detail)}"><button class="ic" data-act="save" title="Save">✓</button><button class="ic danger" data-act="del" title="Delete">🗑</button></div>`).join(""):'<div class="empty">No platforms yet.</div>'}
+    <div class="tools"><a class="btn ghost" href="${esc(cardUrl(u.id))}" target="_blank" rel="noopener">Open card ↗</a><button class="btn ghost" data-act="deluser" data-uid="${u.id}" style="color:#c1121f">Delete user data</button></div></div></details>`).join(""):'<div class="empty">No users yet.</div>'}
+$("#q").oninput=render;
+
+$("#users").onclick=async e=>{const b=e.target.closest("[data-act]");if(!b)return;const act=b.dataset.act;
+  if(act==="deluser"){const u=users.find(x=>x.id===b.dataset.uid);
+    if(!confirm("Delete all card data for "+u.name+"? (Their login account stays in Firebase Authentication.)"))return;
+    try{await db.collection("users").doc(u.id).delete();await db.collection("private").doc(u.id).delete();users=users.filter(x=>x.id!==u.id);render();toast("User data deleted")}catch(x){toast("Failed")}return}
+  const row=b.closest(".row"),u=users.find(x=>x.id===row.dataset.uid),i=u.platforms.findIndex(p=>p.id===row.dataset.pid);
+  if(act==="save"){const name=$('[data-f="name"]',row).value.trim(),detail=$('[data-f="detail"]',row).value.trim();if(!name||!detail)return toast("Both fields needed");u.platforms[i]={...u.platforms[i],name:displayName(name),detail}}
+  if(act==="del"){if(!confirm("Delete this platform?"))return;u.platforms.splice(i,1)}
+  try{await db.collection("users").doc(u.id).update({platforms:u.platforms,updatedAt:ts()});toast(act==="del"?"Deleted":"Saved ✓");render()}catch(x){toast("Failed to save")}};
+
+/* ---------- Excel: Name | Login (email) | one column per platform | Joined ---------- */
+$("#xl").onclick=async()=>{
+  if(!users.length)return toast("No users to export yet");
+  try{await loadJs(XLSX_URL)}catch(e){return toast("Couldn't load Excel tool. Check internet.")}
+  const keys=[],label={};
+  users.forEach(u=>u.platforms.forEach(p=>{const k=norm(displayName(p.name));if(!label[k]){label[k]=displayName(p.name);keys.push(k)}}));
+  const rows=[["Name","Login (email)",...keys.map(k=>label[k]),"Joined"]];
+  users.forEach(u=>rows.push([u.name,u.email,...keys.map(k=>u.platforms.filter(p=>norm(displayName(p.name))===k).map(p=>p.detail).join(" | ")),u.createdAt?new Date(u.createdAt).toLocaleDateString("en-GB"):""]));
+  const ws=XLSX.utils.aoa_to_sheet(rows);ws["!cols"]=rows[0].map((_,c)=>({wch:Math.min(40,Math.max(12,...rows.map(r=>String(r[c]||"").length+2)))}));
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"REACH users");
+  XLSX.writeFile(wb,"REACH-users-"+new Date().toISOString().slice(0,10)+".xlsx");toast("Excel downloaded ✓")};
+</script></body></html>

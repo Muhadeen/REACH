@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>REACH · one card for every way to contact you</title>
+<link rel="icon" href="favicon.png" type="image/png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+.hero{display:grid;gap:36px;align-items:center;padding:26px 0 10px}
+.hero h1{font-size:clamp(2.6rem,10vw,4.8rem);line-height:.96;font-weight:800}
+.hero .lead{font-size:1.1rem;font-weight:600;color:var(--muted);margin:16px 0 18px;max-width:30em}
+.chips{display:flex;gap:8px;flex-wrap:wrap}.chips span{background:#fff;border:1.5px solid var(--line);border-radius:99px;padding:7px 14px;font-weight:800;font-size:.85rem;box-shadow:0 6px 14px -10px rgba(37,99,255,.6)}
+.stage::before{content:"";position:absolute;inset:4% 6%;border-radius:44px;background:linear-gradient(135deg,rgba(37,99,255,.20),rgba(255,77,157,.22))}.stage{position:relative;height:400px;display:grid;place-items:center}
+.phone{width:240px;border:8px solid var(--ink);border-radius:38px;background:#fff;overflow:hidden;box-shadow:0 34px 60px -24px rgba(37,99,255,.7);transform:rotate(-4deg);position:relative;z-index:2}
+.phone .ph{background:var(--grad);padding:20px 12px 14px;text-align:center;color:#fff}
+.phone .ph .a{width:52px;height:52px;border-radius:50%;background:#fff;color:#2563ff;display:grid;place-items:center;font:800 1.4rem "Bricolage Grotesque";margin:0 auto 6px}
+.phone .ph b{display:block;font-family:"Bricolage Grotesque";font-size:1.1rem}.phone .ph small{opacity:.9;font-weight:700}
+.phone .pr{display:flex;align-items:center;gap:9px;padding:9px 11px;margin:8px;border:1.5px solid var(--line);border-radius:14px;font-weight:800;font-size:.8rem}
+.phone .pr small{display:block;color:var(--muted);font-weight:600}
+.fl{position:absolute;z-index:3;animation:fl 4s ease-in-out infinite}
+.fl:nth-of-type(2n){animation-delay:-1.4s}.fl:nth-of-type(3n){animation-delay:-2.6s}
+@keyframes fl{50%{transform:translateY(-10px) rotate(4deg)}}
+#fakeqr{position:absolute;right:-6px;bottom:30px;z-index:4;background:#fff;border-radius:18px;padding:10px;box-shadow:0 20px 34px -16px rgba(37,99,255,.7);animation:fl 5s ease-in-out infinite;display:grid;grid-template-columns:repeat(9,7px);gap:1px}
+#fakeqr i{width:7px;height:7px;background:#fff;border-radius:1px}#fakeqr i.on{background:var(--ink)}
+.tabs{display:flex;background:#eaf1ff;border-radius:14px;padding:4px;margin-bottom:6px}
+.tabs button{flex:1;border:0;background:none;font:800 .95rem Manrope,sans-serif;padding:11px;border-radius:11px;cursor:pointer;color:var(--muted)}
+.tabs button.on{background:#fff;color:var(--ink);box-shadow:0 3px 10px -4px rgba(37,99,255,.5)}
+.sec{margin-top:70px}.sh{font-size:clamp(1.7rem,6vw,2.6rem);text-align:center;margin-bottom:26px;font-weight:800}
+.steps,.feats{display:grid;gap:14px}
+.step,.feat{background:#fff;border:1.5px solid var(--line);border-radius:24px;padding:22px;box-shadow:0 16px 30px -22px rgba(37,99,255,.5)}
+.step .n{width:44px;height:44px;border-radius:14px;background:var(--grad);color:#fff;display:grid;place-items:center;font:800 1.3rem "Bricolage Grotesque";margin-bottom:12px;box-shadow:0 10px 18px -8px rgba(255,79,154,.8)}
+.step h3,.feat h3{font-size:1.15rem;margin-bottom:6px}.step p,.feat p{color:var(--muted);font-weight:600;font-size:.95rem}
+.feat .ico{width:50px;height:50px;border-radius:16px;display:grid;place-items:center;font-size:1.6rem;margin-bottom:12px}
+.feat:nth-child(1) .ico{background:linear-gradient(135deg,#1d4ed8,#5b9bff)}.feat:nth-child(2) .ico{background:linear-gradient(135deg,#ff4d9d,#ff94c4)}.feat:nth-child(3) .ico{background:linear-gradient(135deg,#38bdf8,#8fdcff)}.feat:nth-child(4) .ico{background:linear-gradient(135deg,#2563ff,#ff4d9d)}
+.band{margin-top:70px;background:var(--grad);border-radius:32px;padding:44px 22px;text-align:center;color:#fff;position:relative;overflow:hidden}
+.band::after{content:"";position:absolute;width:300px;height:300px;border-radius:50%;background:rgba(255,255,255,.14);left:-90px;bottom:-150px}
+.band h2{font-size:clamp(1.8rem,6vw,2.8rem);margin-bottom:16px;position:relative}.band .btn{background:#fff;color:var(--ink);position:relative}
+.grid{display:grid;gap:16px}
+.side .card{margin:0;position:relative;overflow:hidden}.side .card::before{content:"";position:absolute;left:0;right:0;top:0;height:6px;background:var(--grad)}
+.card.me{background:var(--grad);border:0;color:#fff;box-shadow:0 22px 40px -20px rgba(255,79,154,.8)}.me .sub{color:rgba(255,255,255,.88)}
+.av{width:58px;height:58px;border-radius:50%;background:#fff;color:#2563ff;display:grid;place-items:center;font:800 1.5rem "Bricolage Grotesque";flex:none}
+.me{display:flex;gap:14px;align-items:center}
+.stats{display:flex;gap:10px;margin-top:14px}
+.stat{flex:1;border-radius:16px;padding:12px 14px;color:#fff}.stat:nth-child(1){background:linear-gradient(135deg,#1d4ed8,#4f8cff)}.stat:nth-child(2){background:linear-gradient(135deg,#ff4d9d,#ff8cc0)}
+.stat b{display:block;font:800 1.8rem "Bricolage Grotesque"}.stat small{font-weight:700;color:rgba(255,255,255,.92)}
+.addrow{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}.addrow>div{flex:1 1 180px}
+.prev{display:flex;align-items:center;gap:12px}
+#qr{display:grid;place-items:center;padding:14px;background:#fff;border:1.5px solid var(--line);border-radius:20px;margin:14px 0}#qr img{display:none}
+.copy{display:flex;gap:8px}.copy input{font-size:.85rem}
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.danger-zone{border-color:#f7c6cf}
+.tip{font-size:.84rem;color:var(--muted);font-weight:600;margin-top:10px}
+footer{text-align:center;color:var(--muted);font-weight:700;padding:10px 0 30px;font-size:.9rem}
+@media(min-width:760px){.steps{grid-template-columns:repeat(3,1fr)}.feats{grid-template-columns:repeat(4,1fr)}}
+@media(min-width:880px){.hero{grid-template-columns:1.1fr .9fr;grid-template-areas:"text card" "stage card";gap:20px 50px;padding-top:40px;align-items:start}#signbox{position:sticky;top:16px;grid-area:card}.hero>div:first-child{grid-area:text}.stage{grid-area:stage}.grid{grid-template-columns:1fr 350px;align-items:start}.side{position:sticky;top:16px}}
+.addcard{padding:0;overflow:hidden;border:0;box-shadow:0 24px 44px -22px rgba(37,99,255,.6)}
+.addhead{background:var(--grad);color:#fff;padding:22px;display:flex;justify-content:space-between;align-items:center;gap:12px;position:relative;overflow:hidden}
+.addhead::after{content:"";position:absolute;width:190px;height:190px;border-radius:50%;background:rgba(255,255,255,.16);right:-50px;top:-80px}
+.addhead h2{color:#fff;margin:0 0 4px}.addhead p{font-weight:600;opacity:.94;font-size:.92rem;max-width:26em}
+.plus{width:52px;height:52px;border-radius:17px;background:rgba(255,255,255,.22);display:grid;place-items:center;font-size:1.9rem;font-weight:800;position:relative;z-index:1;flex:none}
+.addbody{padding:18px 22px 22px}
+.quick{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 14px;margin:0 -2px;scrollbar-width:thin}
+.q{flex:none;width:64px;display:flex;flex-direction:column;align-items:center;gap:5px;background:none;border:0;cursor:pointer;font:700 .66rem Manrope,system-ui,sans-serif;color:var(--muted);padding:4px 0;transition:transform .15s}
+.q:hover{transform:translateY(-3px)}.q.on .logo{border-color:var(--a2);box-shadow:0 0 0 3px rgba(255,77,157,.28)}
+.steps2{display:grid;gap:4px}
+.field label{display:flex;align-items:center;gap:8px}
+.num{width:22px;height:22px;border-radius:50%;background:var(--grad);color:#fff;display:inline-grid;place-items:center;font-size:.75rem}
+.bigprev .logo{border:2px dashed #aec6ff;background:linear-gradient(135deg,#eaf1ff,#ffe9f3)}
+#pName,#pDet{background:#f6f9ff}
+.btn.big{margin-top:18px;padding:15px 20px;font-size:1.05rem}
+@media(min-width:560px){.steps2{grid-template-columns:1fr 1fr;gap:14px}}
+.grid>*,.main,.side{min-width:0}.addbody{min-width:0}.addcard .err{margin-top:6px;min-height:0}
+</style></head><body>
+<header class="top"><a class="brand" href="./"><img src="logo-mark.png" alt="">REACH</a><button class="btn ghost hide" id="logout">Log out</button></header>
+
+<div class="wrap">
+<div id="boot"><div class="spin"></div></div>
+
+<!-- LOGGED OUT -->
+<section id="auth" class="hero hide">
+  <div>
+    <h1>One card.<br><span class="grad">Every way</span> to reach you.</h1>
+    <p class="lead">Put your Instagram, WhatsApp, LinkedIn, phone and more in one place. Share a link or a QR code and anyone can open it, with no login.</p>
+    <div class="chips"><span>⚡ Free</span><span>📱 Works on any phone</span><span>🔗 No app needed</span></div>
+  </div>
+  <div class="card" id="signbox">
+    <div class="tabs"><button id="tSign" class="on">Create account</button><button id="tLog">Log in</button></div>
+    <form id="authForm" novalidate>
+      <div id="nameBox"><label for="aName">Your name</label><input id="aName" autocomplete="name" placeholder="e.g. Ama Mensah"></div>
+      <label for="aEmail">Email</label><input id="aEmail" type="email" autocomplete="email" placeholder="you@example.com">
+      <label for="aPw">Password</label>
+      <div class="pw"><input id="aPw" type="password" autocomplete="current-password" placeholder="At least 6 characters"><button type="button" id="showPw">Show</button></div>
+      <p class="err" id="authErr" role="alert"></p>
+      <button class="btn accent block" id="authBtn" style="margin-top:8px">Create my card</button>
+      <div style="text-align:center"><button type="button" class="link hide" id="forgot">Forgot password?</button></div>
+    </form>
+  </div>
+  <div class="stage" aria-hidden="true">
+      <div class="phone"><div class="ph"><div class="a">A</div><b>Ama Mensah</b><small>Photographer · Accra</small></div>
+        <div class="pr" id="m1"></div><div class="pr" id="m2"></div><div class="pr" id="m3"></div><div style="height:6px"></div></div>
+      <div class="fl" id="f1" style="left:4%;top:8%"></div><div class="fl" id="f2" style="right:2%;top:2%"></div>
+      <div class="fl" id="f3" style="left:0;bottom:14%"></div><div class="fl" id="f4" style="right:10%;bottom:-2%"></div>
+      <div id="fakeqr"></div>
+    </div>
+</section>
+
+<section id="landing" class="hide">
+  <div class="sec"><h2 class="sh">How it works</h2><div class="steps">
+    <div class="step"><div class="n">1</div><h3>Create your account</h3><p>Sign up in seconds. You're logged in straight away.</p></div>
+    <div class="step"><div class="n">2</div><h3>Add your platforms</h3><p>Type a name like Instagram and its logo appears. Add your details.</p></div>
+    <div class="step"><div class="n">3</div><h3>Share your QR</h3><p>Download your QR code or copy your link. Anyone can scan and connect.</p></div></div></div>
+  <div class="sec"><h2 class="sh">Made to be handy</h2><div class="feats">
+    <div class="feat"><div class="ico">✨</div><h3>Logos appear by themselves</h3><p>Just type the platform name.</p></div>
+    <div class="feat"><div class="ico">📲</div><h3>QR that works anywhere</h3><p>Print it, post it, put it on your phone case.</p></div>
+    <div class="feat"><div class="ico">🔓</div><h3>No login to view</h3><p>People open your card instantly, with nothing to sign up for.</p></div>
+    <div class="feat"><div class="ico">✏️</div><h3>Change it anytime</h3><p>Add, edit or delete platforms whenever you like.</p></div></div></div>
+  <div class="band"><h2>Ready to be easy to reach?</h2><button class="btn" id="toTop">Create my card</button></div>
+</section>
+
+<!-- LOGGED IN -->
+<section id="app" class="hide">
+  <div class="card me" style="margin-bottom:16px">
+    <div class="av" id="avatar">M</div>
+    <div style="flex:1;min-width:0"><h2 id="hiName" style="margin:0">Hi</h2><p class="sub" style="margin:0" id="hiBio">Add the ways people can reach you.</p></div>
+  </div>
+  <div class="grid">
+    <div class="main">
+      <div class="card addcard">
+        <div class="addhead"><div><h2>Add a platform</h2><p>Tap a logo or type any name. Its logo appears by itself.</p></div><div class="plus">＋</div></div>
+        <div class="addbody">
+          <div class="quick" id="quick"></div>
+          <form id="addForm" novalidate>
+            <div class="steps2">
+              <div class="field"><label for="pName"><span class="num">1</span> Platform</label>
+                <div class="prev"><span id="pLogo" class="bigprev"></span><input id="pName" list="plist" placeholder="Instagram, WhatsApp, Phone…" autocomplete="off"></div>
+                <datalist id="plist"></datalist></div>
+              <div class="field"><label for="pDet"><span class="num">2</span> Your details</label><input id="pDet" placeholder="@username or number" autocomplete="off"></div>
+            </div>
+            <button class="btn accent block big">＋ Add to my card</button>
+          </form>
+          <p class="err" id="addErr"></p>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Your platforms <span class="pill" id="count">0</span></h2>
+        <p class="sub">Edit or delete anytime, and add more later.</p>
+        <div id="list"></div>
+      </div>
+      <div class="card">
+        <h2>Profile</h2>
+        <label for="fName">Display name</label><input id="fName" maxlength="60">
+        <label for="fBio">Short bio <span style="font-weight:600;color:var(--muted)">(optional)</span></label><input id="fBio" maxlength="140" placeholder="e.g. Photographer in Accra">
+        <button class="btn" id="saveProf" style="margin-top:14px">Save profile</button>
+      </div>
+      <div class="card danger-zone">
+        <h2>Delete my card</h2><p class="sub">Removes your card and account for good. Your QR code will stop working.</p>
+        <button class="btn ghost" id="delAcc" style="color:#c1121f">Delete everything</button>
+      </div>
+    </div>
+    <aside class="side"><div class="card">
+      <h2>Share your card</h2><p class="sub">Anyone who scans this sees your details instantly.</p>
+      <div id="qr"></div>
+      <div class="copy"><input id="cardLink" readonly><button class="btn ghost" id="copyBtn">Copy</button></div>
+      <div class="acts"><button class="btn" id="dlQr">⬇ QR code</button><a class="btn ghost" id="openCard" target="_blank" rel="noopener">Preview ↗</a></div>
+      <button class="btn ghost block hide" id="shareBtn" style="margin-top:8px">Share link…</button>
+      <div class="stats"><div class="stat"><b id="views">0</b><small>card views</small></div><div class="stat"><b id="pc">0</b><small>platforms</small></div></div>
+      <p class="tip">Tip: put the QR on your business card, phone case or Instagram story.</p>
+    </div></aside>
+  </div>
+</section>
+</div>
+<footer>Built by Muhadeen ❤️</footer>
+
+<script src="core.js"></script>
+<script>
+let db,auth,user,profile,mode="signup",pendingName="",editing=null,fails=0;
+
+/* decorative logos on the landing page */
+$("#m1").innerHTML=logo("Instagram",34)+"<div>Instagram<small>@ama.shoots</small></div>";
+$("#m2").innerHTML=logo("WhatsApp",34)+"<div>WhatsApp<small>+233 24 000 0000</small></div>";
+$("#m3").innerHTML=logo("LinkedIn",34)+"<div>LinkedIn<small>in/amamensah</small></div>";
+["TikTok","Snapchat","YouTube","Telegram"].forEach((n,i)=>$("#f"+(i+1)).innerHTML=logo(n,58));
+$("#fakeqr").innerHTML=Array.from({length:81},(_,i)=>{const r=Math.floor(i/9),c=i%9,corner=(r<3&&c<3)||(r<3&&c>5)||(r>5&&c<3);return `<i class="${corner||Math.random()>.52?"on":""}"></i>`}).join("");
+$("#toTop").onclick=()=>{window.scrollTo({top:0,behavior:"smooth"});setTimeout(()=>$("#aName").focus(),500)};
+$("#plist").innerHTML=P.map(p=>`<option value="${esc(p[0])}">`).join("");
+$("#pLogo").innerHTML=logo("",56);
+const QUICK=["Instagram","WhatsApp","Facebook","TikTok","Snapchat","LinkedIn","X","YouTube","Telegram","Phone","Email","Website"];
+$("#quick").innerHTML=QUICK.map(n=>`<button type="button" class="q" data-n="${n}">${logo(n,50)}<span>${esc(displayName(n))}</span></button>`).join("");
+$("#quick").onclick=e=>{const b=e.target.closest(".q");if(!b)return;$("#pName").value=displayName(b.dataset.n);$("#pName").oninput();$("#pDet").focus()};
+
+function show(v){["boot","auth","landing","app"].forEach(x=>$("#"+x).classList.toggle("hide",x!==v&&!(x==="landing"&&v==="auth")));$("#logout").classList.toggle("hide",v!=="app")}
+
+(async()=>{
+  try{const f=await fb();db=f.db;auth=f.auth;await loadJs(QR_URL);await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{})}
+  catch(e){$("#boot").innerHTML='<p class="err" style="text-align:center;margin-top:60px">Could not load. Check your internet and refresh.</p>';return}
+  auth.onAuthStateChanged(onUser);
+})();
+
+async function onUser(u){
+  if(!u){user=null;profile=null;show("auth");return}
+  user=u;
+  try{
+    const ref=db.collection("users").doc(u.uid);let snap=await ref.get();
+    if(!snap.exists){
+      const name=pendingName||u.displayName||(u.email||"").split("@")[0];
+      await ref.set({name,bio:"",platforms:[],views:0,createdAt:ts()});
+      snap=await ref.get();
+    }
+    profile=snap.data();
+    await db.collection("private").doc(u.uid).set({email:u.email,name:profile.name,createdAt:profile.createdAt||ts()},{merge:true});
+    renderAll();show("app");
+  }catch(e){console.error(e);show("auth");$("#authErr").textContent="Signed in, but your card couldn't load. The database rules may not be published yet."}
+}
+
+/* ---------- auth ---------- */
+function setMode(m){mode=m;$("#tSign").classList.toggle("on",m==="signup");$("#tLog").classList.toggle("on",m==="login");
+  $("#nameBox").classList.toggle("hide",m!=="signup");$("#forgot").classList.toggle("hide",m!=="login");
+  $("#authBtn").textContent=m==="signup"?"Create my card":"Log in";$("#aPw").autocomplete=m==="signup"?"new-password":"current-password";$("#authErr").textContent="";$("#authErr").className="err"}
+$("#tSign").onclick=()=>setMode("signup");$("#tLog").onclick=()=>setMode("login");
+$("#showPw").onclick=()=>{const i=$("#aPw"),s=i.type==="password";i.type=s?"text":"password";$("#showPw").textContent=s?"Hide":"Show"};
+$("#authForm").onsubmit=async e=>{e.preventDefault();
+  const name=$("#aName").value.trim(),email=$("#aEmail").value.trim().toLowerCase(),pw=$("#aPw").value,err=$("#authErr");err.className="err";err.textContent="";
+  if(mode==="signup"&&!name)return err.textContent="Please enter your name.";
+  if(!email)return err.textContent="Please enter your email.";
+  if(!pw)return err.textContent="Please enter your password.";
+  if(mode==="signup"&&pw.length<6)return err.textContent="Password must be at least 6 characters.";
+  $("#authBtn").disabled=true;
+  try{
+    if(mode==="signup"){pendingName=name;await auth.createUserWithEmailAndPassword(email,pw)}  // signs in automatically
+    else await auth.signInWithEmailAndPassword(email,pw);
+  }catch(x){fails++;err.textContent=authMsg(x.code)+(mode==="login"&&fails>=3?" Forgot it? Tap “Forgot password?” below.":"");const b=$("#signbox");b.classList.remove("shake");void b.offsetWidth;b.classList.add("shake")}
+  $("#authBtn").disabled=false};
+$("#forgot").onclick=async()=>{const email=$("#aEmail").value.trim(),err=$("#authErr");
+  if(!email){err.className="err";return err.textContent="Type your email above first, then tap Forgot password."}
+  try{await auth.sendPasswordResetEmail(email)}catch(x){if(x.code==="auth/invalid-email"){err.className="err";return err.textContent=authMsg(x.code)}}
+  err.className="err ok";err.textContent="If that email has an account, a reset link is on its way. Check spam too."};
+$("#logout").onclick=()=>auth.signOut();
+
+/* ---------- render ---------- */
+function renderAll(){
+  const n=profile.name||"Friend";
+  $("#avatar").textContent=n[0].toUpperCase();$("#hiName").textContent="Hi, "+n.split(" ")[0]+" 👋";
+  $("#hiBio").textContent=profile.bio||"Add the ways people can reach you.";
+  $("#fName").value=n;$("#fBio").value=profile.bio||"";
+  $("#views").textContent=profile.views||0;
+  renderList();buildQR();
+}
+function renderList(){
+  const pl=profile.platforms||[];$("#count").textContent=pl.length;$("#pc").textContent=pl.length;
+  $("#list").innerHTML=pl.length?pl.map(p=>p.id===editing?
+   `<div class="row edit" data-id="${p.id}">${logo(p.name,44)}<input data-f="name" value="${esc(p.name)}" list="plist"><input data-f="detail" value="${esc(p.detail)}"><button class="ic" data-act="save" title="Save">✓</button><button class="ic" data-act="cancel" title="Cancel">✕</button></div>`:
+   `<div class="row" data-id="${p.id}">${logo(p.name,44)}<div class="rt"><b>${esc(displayName(p.name))}</b><span>${esc(p.detail)}</span></div><div class="ra"><button class="ic" data-act="edit" title="Edit">✎</button><button class="ic danger" data-act="del" title="Delete">🗑</button></div></div>`
+  ).join(""):'<div class="empty">Nothing here yet.<br>Add your first platform above 👆</div>'}
+
+async function savePlatforms(msg){
+  try{await db.collection("users").doc(user.uid).update({platforms:profile.platforms,updatedAt:ts()});toast(msg||"Saved ✓")}
+  catch(e){console.error(e);toast("Couldn't save. Check your connection.")}
+  renderList();$("#pc").textContent=profile.platforms.length}
+
+/* add */
+$("#pName").oninput=()=>{const v=$("#pName").value;$("#pLogo").innerHTML=logo(v,56);$("#pDet").placeholder=v.trim()?hintFor(v):"@username or number";$$("#quick .q").forEach(q=>q.classList.toggle("on",!!v.trim()&&displayName(q.dataset.n)===displayName(v)))};
+$("#addForm").onsubmit=async e=>{e.preventDefault();
+  const name=$("#pName").value.trim(),detail=$("#pDet").value.trim(),err=$("#addErr");err.textContent="";
+  if(!name)return err.textContent="Type a platform name, like Instagram.";
+  if(!detail)return err.textContent="Add your username, number or link.";
+  profile.platforms=[...(profile.platforms||[]),{id:Math.random().toString(36).slice(2,10),name:displayName(name),detail}];
+  $("#pName").value="";$("#pDet").value="";$("#pName").oninput();
+  await savePlatforms("Added ✓")};
+
+/* edit / delete */
+$("#list").onclick=async e=>{const b=e.target.closest("[data-act]");if(!b)return;
+  const row=b.closest(".row"),id=row.dataset.id,i=profile.platforms.findIndex(p=>p.id===id),act=b.dataset.act;
+  if(act==="edit"){editing=id;renderList()}
+  else if(act==="cancel"){editing=null;renderList()}
+  else if(act==="save"){const name=$('[data-f="name"]',row).value.trim(),detail=$('[data-f="detail"]',row).value.trim();
+    if(!name||!detail)return toast("Both fields are needed");
+    profile.platforms[i]={...profile.platforms[i],name:displayName(name),detail};editing=null;await savePlatforms()}
+  else if(act==="del"){if(!confirm("Delete "+displayName(profile.platforms[i].name)+"?"))return;
+    profile.platforms.splice(i,1);await savePlatforms("Deleted")}};
+
+/* profile */
+$("#saveProf").onclick=async()=>{const name=$("#fName").value.trim(),bio=$("#fBio").value.trim();
+  if(!name)return toast("Name can't be empty");
+  try{await db.collection("users").doc(user.uid).update({name,bio,updatedAt:ts()});await db.collection("private").doc(user.uid).set({name},{merge:true});
+    profile.name=name;profile.bio=bio;renderAll();toast("Profile saved ✓")}catch(e){toast("Couldn't save")}};
+
+/* share + QR */
+function buildQR(){const url=cardUrl(user.uid);$("#cardLink").value=url;$("#openCard").href=url;
+  const q=$("#qr");q.innerHTML="";new QRCode(q,{text:url,width:230,height:230,colorDark:"#0a1a4f",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M});
+  if(navigator.share)$("#shareBtn").classList.remove("hide")}
+$("#copyBtn").onclick=async()=>{try{await navigator.clipboard.writeText($("#cardLink").value)}catch(e){$("#cardLink").select();document.execCommand("copy")}toast("Link copied ✓")};
+$("#shareBtn").onclick=()=>navigator.share({title:profile.name+" on REACH",text:"My contact card",url:$("#cardLink").value}).catch(()=>{});
+$("#dlQr").onclick=()=>{const src=$("#qr canvas");if(!src)return toast("QR not ready");
+  const m=new Image();m.onload=m.onerror=()=>{
+    const c=document.createElement("canvas"),W=360,H=450,x=c.getContext("2d");c.width=W;c.height=H;
+    x.fillStyle="#fff";x.fillRect(0,0,W,H);x.drawImage(src,65,30,230,230);
+    x.textAlign="center";x.fillStyle="#0f3a63";x.font="800 26px sans-serif";x.fillText(profile.name.slice(0,26),W/2,305);
+    x.fillStyle="#5a6a98";x.font="700 16px sans-serif";x.fillText("Scan to save my contact details",W/2,338);
+    x.font="800 22px sans-serif";const tw=x.measureText("REACH").width,h=40,w=m.naturalWidth?h*m.naturalWidth/m.naturalHeight:0,gap=w?10:0,sx=(W-(w+gap+tw))/2;
+    if(w)x.drawImage(m,sx,380,w,h);x.fillStyle="#0f3a63";x.textAlign="left";x.fillText("REACH",sx+w+gap,408);
+    const a=document.createElement("a");a.download="my-reach-qr.png";a.href=c.toDataURL("image/png");a.click()};
+  m.src="logo-mark.png"};
+
+/* delete account */
+$("#delAcc").onclick=async()=>{
+  if(!confirm("Delete your card and account permanently? This cannot be undone."))return;
+  const pw=prompt("Enter your password to confirm:");if(!pw)return;
+  try{
+    await user.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(user.email,pw));
+    await db.collection("users").doc(user.uid).delete();await db.collection("private").doc(user.uid).delete();await user.delete();toast("Account deleted");
+  }catch(e){toast(e.code==="auth/invalid-credential"||e.code==="auth/wrong-password"?"Wrong password. Nothing was deleted.":"Couldn't delete. Try again.")}};
+</script></body></html>
