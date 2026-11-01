@@ -82,8 +82,9 @@ let failed=[],msgsAll=[];
 async function load(){
   const q=(n,lim)=>{let c=db.collection(n);if(lim)c=c.limit(lim);return c.get()};
   const names=["users","private","cards","feedback","hits","messages"];
-  const rs=await Promise.allSettled([q("users"),q("private"),q("cards"),q("feedback"),q("hits",20000),q("messages")]);
+  const rs=await Promise.allSettled([q("users"),q("private"),q("cards"),q("feedback"),q("hits"),q("messages")]);
   failed=names.filter((n,i)=>rs[i].status!=="fulfilled");
+  const why=names.map((n,i)=>rs[i].status!=="fulfilled"?n+" ("+((rs[i].reason&&rs[i].reason.code)||"error")+")":null).filter(Boolean);
   const g=i=>rs[i].status==="fulfilled"?rs[i].value.docs:[];
   const priv={};g(1).forEach(d=>priv[d.id]=d.data());
   cardsAll=g(2).map(d=>({id:d.id,...d.data()}));
@@ -93,7 +94,7 @@ async function load(){
   msgsAll=g(5).map(d=>({id:d.id,...d.data(),ts:ms(d.data().ts)})).sort((a,b)=>b.ts-a.ts);
   $("#sV").textContent=hitsAll.filter(h=>h.type==="view").length;
   const w=$("#warn");w.classList.toggle("hide",!failed.length);
-  if(failed.length)w.innerHTML="⚠️ Firebase is blocking access to: <b>"+failed.join(", ")+"</b>. Publish the latest Firestore rules from the README, then tap Refresh.";
+  if(failed.length)w.innerHTML="⚠️ Couldn't read: <b>"+why.join(", ")+"</b>. If it says permission-denied, publish the latest Firestore rules from the README. Then tap Refresh.";
   render();renderFb();renderMsgs()}
 
 function render(){
@@ -132,7 +133,7 @@ $("#tabs").onclick=async e=>{const b=e.target.closest("button");if(!b)return;con
   $$("#tabs button").forEach(x=>x.classList.toggle("on",x===b));["users","stats","fb","msg"].forEach(k=>$("#p-"+k).classList.toggle("hide",k!==t));
   if(t==="stats")await renderStats()};
 async function renderStats(){
-  if(failed.includes("hits")){$("#aBody").innerHTML='<div class="empty">Analytics are blocked by Firestore rules. Publish the latest rules, then tap Refresh on the Users tab.</div>';return}
+  if(failed.includes("hits")){$("#aBody").innerHTML='<div class="empty">Analytics couldn\'t be loaded. See the orange message above for the reason, then tap Refresh on the Users tab.</div>';return}
   const names={};cardsAll.forEach(c=>names[c.id]=(c.name||"")+(c.label?" ("+c.label+")":""));
   $("#aBody").innerHTML='<h2>Platform-wide analytics</h2><p class="sub">All cards, all users.</p>'+analyticsHtml(hitsAll,{names})}
 
