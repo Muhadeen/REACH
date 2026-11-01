@@ -33,16 +33,16 @@ function msg(t,s){$("#page").innerHTML=`<div class="card" style="text-align:cent
   try{
     const {db,auth}=await fb();const snap=await db.collection("cards").doc(id).get();
     if(!snap.exists)return msg("Card not found","It may have been deleted, or the link is wrong.");
-    const d=snap.data(),lines=contactLines(d);document.title=d.name+" · REACH";
+    const d=snap.data(),lines=contactLines(d),th=cardTheme(d);document.title=d.name+" · REACH";
     const photo=safeImg(d.photo),clogo=safeImg(d.companyLogo);
     const track=async(row)=>{try{const u=await authReady(auth);if(u&&u.uid===d.owner)return;
       const rec={card:id,owner:d.owner,type:row?"click":"view",src,vid:vid(),ts:ts()};if(row)rec.p=row;await db.collection("hits").add(rec)}catch(e){}};
     $("#page").innerHTML=`
-     <div class="hd"><div class="big">${photo?`<img src="${photo}" alt="">`:esc((d.name||"?")[0].toUpperCase())}</div><h1>${esc(d.name)}</h1>
+     <div class="hd" style="background:linear-gradient(135deg,${th.bg.join(",")});color:${th.ink}"><div class="big">${photo?`<img src="${photo}" alt="">`:esc((d.name||"?")[0].toUpperCase())}</div><h1>${esc(d.name)}</h1>
       ${d.title?`<div class="role">${esc(d.title)}</div>`:""}
       ${d.company?`<div class="co">${clogo?`<span class="lg"><img src="${clogo}" alt=""></span>`:""}<span>${esc(d.company)}</span></div>`:(clogo?`<div class="co"><span class="lg"><img src="${clogo}" alt=""></span></div>`:"")}
       ${d.bio?`<p>${esc(d.bio)}</p>`:""}</div>
-     <div class="list">${lines.length?lines.map((l,i)=>{const inner=`${l.icon?`<span class="logo" style="--s:48px">${l.icon}</span>`:logo(l.logoName||l.name,48)}<div class="t"><b>${esc(l.name)}</b><span class="v">${esc(l.value)}</span></div>`;
+     <div class="list">${lines.length?lines.map((l,i)=>{const inner=`${l.icon?`<span class="logo" style="--s:48px">${l.icon}</span>`:logo(l.logoName||l.name,48,l.value)}<div class="t"><b>${esc(l.name)}</b><span class="v">${esc(l.value)}</span></div>`;
        return l.href?`<a class="item" data-p="${esc(l.kind)}" href="${esc(l.href)}" target="_blank" rel="noopener">${inner}<span class="go">Open ↗</span></a>`
         :`<button class="item cp-btn" data-p="${esc(l.kind)}" data-c="${esc(l.value)}">${inner}<span class="go">Copy</span></button>`}).join(""):'<div class="empty">No contact details added yet.</div>'}</div>
      <button class="btn block" id="vc" style="margin-top:6px">➕ Save to my contacts</button>

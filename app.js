@@ -1,4 +1,4 @@
-let db,auth,user,udata,cards=[],cur=null,hits=null,mode="signup",pendingName="",signingUp=false,editing=null,fails=0,theme="blue",side="front",tab="links",newType="personal",rating=0,prTok=0;
+let db,auth,user,udata,cards=[],cur=null,hits=null,mode="signup",pendingName="",signingUp=false,editing=null,fails=0,side="front",tab="links",newType="personal",rating=0,prTok=0;
 const C=()=>cards.find(c=>c.id===cur)||cards[0];
 const TYPE_ICON={personal:"🙂",business:"💼",other:"✨"};
 
@@ -13,7 +13,6 @@ $("#plist").innerHTML=P.map(p=>`<option value="${esc(p[0])}">`).join("");
 $("#pLogo").innerHTML=logo("",56);
 const QUICK=["Instagram","WhatsApp","Facebook","TikTok","Snapchat","LinkedIn","X","YouTube","Telegram","Phone","Email","Website"];
 $("#quick").innerHTML=QUICK.map(n=>`<button type="button" class="q" data-n="${n}">${logo(n,50)}<span>${esc(displayName(n))}</span></button>`).join("");
-$("#themes").innerHTML=Object.entries(THEMES).map(([k,t])=>`<button class="cp ${k===theme?"on":""}" data-k="${k}" type="button">${t.label}</button>`).join("");
 
 function show(v){["boot","auth","landing","app"].forEach(x=>$("#"+x).classList.toggle("hide",x!==v&&!(x==="landing"&&v==="auth")));
   $("#logout").classList.toggle("hide",v!=="app");$("#fbTop").classList.toggle("hide",v!=="app")}
@@ -43,7 +42,6 @@ async function loadCards(){
 }
 async function onUser(u){
   if(signingUp)return;
-  $("#adminLink").classList.toggle("hide",!(u&&(u.email||"").toLowerCase()===ADMIN_EMAIL.toLowerCase()));
   if(!u){user=null;cards=[];hits=null;show("auth");return}
   user=u;
   try{await ensureUser(u,pendingName);await loadCards();renderAll();show("app")}
@@ -96,8 +94,8 @@ $("#cardbar").onclick=e=>{const b=e.target.closest("button");if(!b)return;if(b.i
 
 function renderList(){const pl=C().platforms||[];$("#count").textContent=pl.length;
   $("#list").innerHTML=pl.length?pl.map(p=>p.id===editing?
-   `<div class="row edit" data-id="${p.id}">${logo(p.name,44)}<input data-f="name" value="${esc(p.name)}" list="plist"><input data-f="detail" value="${esc(p.detail)}"><button class="ic" data-act="save" title="Save">✓</button><button class="ic" data-act="cancel" title="Cancel">✕</button></div>`:
-   `<div class="row" data-id="${p.id}">${logo(p.name,44)}<div class="rt"><b>${esc(displayName(p.name))}</b><span>${esc(p.detail)}</span></div><div class="ra"><button class="ic" data-act="edit" title="Edit">✎</button><button class="ic danger" data-act="del" title="Delete">🗑</button></div></div>`
+   `<div class="row edit" data-id="${p.id}">${logo(p.name,44,p.detail)}<input data-f="name" value="${esc(p.name)}" list="plist"><input data-f="detail" value="${esc(p.detail)}"><button class="ic" data-act="save" title="Save">✓</button><button class="ic" data-act="cancel" title="Cancel">✕</button></div>`:
+   `<div class="row" data-id="${p.id}">${logo(p.name,44,p.detail)}<div class="rt"><b>${esc(displayName(p.name))}</b><span>${esc(p.detail)}</span></div><div class="ra"><button class="ic" data-act="edit" title="Edit">✎</button><button class="ic danger" data-act="del" title="Delete">🗑</button></div></div>`
   ).join(""):'<div class="empty">Nothing here yet.<br>Add your first platform above 👆</div>'}
 
 async function saveCard(patch,msg,o){const c=C();Object.assign(c,patch);
@@ -175,10 +173,26 @@ $("#shareBtn").onclick=()=>navigator.share({title:C().name+" on REACH",text:"My 
 $("#dlQr").onclick=async()=>{const c=C();try{downloadCanvas(await drawQrCard(c,cardUrl(c.id,"qr")),safeName(c.name)+"-QR-REACH.png")}catch(e){console.error(e);toast("Couldn't create the image")}};
 
 /* ---------- printable business card ---------- */
-$("#themes").onclick=e=>{const b=e.target.closest("button");if(!b)return;theme=b.dataset.k;$$("#themes button").forEach(x=>x.classList.toggle("on",x===b));renderPrint()};
+const PALETTE=["#2563ff","#0ea5e9","#0d9488","#16a34a","#d97706","#ea580c","#dc2626","#ec4899","#7c3aed","#0f3a63","#111827","#b45309"];
+const frontSel=c=>Array.isArray(c.frontPick)?c.frontPick:contactLines(c).slice(0,8).map(l=>l.key);
+function renderPrintControls(){const c=C(),custom=c.color&&!PALETTE.includes(c.color);
+  $("#swatches").innerHTML=`<button type="button" class="sw ${!c.color?"on":""}" data-c="" title="Blue &amp; pink" style="background:linear-gradient(120deg,#1d4ed8,#ff4d9d)"></button>`+PALETTE.map(k=>`<button type="button" class="sw ${c.color===k?"on":""}" data-c="${k}" style="background:${k}" title="${k}"></button>`).join("")+
+    `<label class="sw custom ${custom?"on":""}" title="Pick any colour">＋<input type="color" id="cCustom" value="${c.color||"#2563ff"}"></label>`;
+  $$("#styles button").forEach(b=>b.classList.toggle("on",b.dataset.s===(c.cstyle||"gradient")));
+  const lines=contactLines(c),pick=frontSel(c).filter(k=>lines.some(l=>l.key===k));
+  $("#frontCount").textContent=pick.length+" / 8";
+  $("#frontList").innerHTML=lines.length?lines.map(l=>`<label class="chk ${pick.includes(l.key)?"on":""}"><input type="checkbox" data-k="${esc(l.key)}" ${pick.includes(l.key)?"checked":""}>${l.icon?`<span class="logo" style="--s:26px">${l.icon}</span>`:logo(l.logoName||l.name,26,l.value)}<span class="t"><b>${esc(l.name)}</b> · ${esc(l.value)}</span></label>`).join(""):'<p class="hint">Add platforms or business details first, then choose what shows here.</p>'}
+$("#swatches").onclick=e=>{const b=e.target.closest("button.sw");if(b)saveCard({color:b.dataset.c},"Colour saved ✓")};
+$("#swatches").addEventListener("change",e=>{if(e.target.id==="cCustom")saveCard({color:e.target.value},"Colour saved ✓")});
+$("#styles").onclick=e=>{const b=e.target.closest("button");if(b)saveCard({cstyle:b.dataset.s},"Style saved ✓")};
+$("#frontList").onchange=e=>{const k=e.target.dataset.k;if(!k)return;const c=C(),lines=contactLines(c);let pick=frontSel(c).filter(x=>lines.some(l=>l.key===x));
+  if(e.target.checked){if(pick.length>=8){e.target.checked=false;return toast("Up to 8 items fit on the front")}pick.push(k)}else pick=pick.filter(x=>x!==k);
+  saveCard({frontPick:lines.map(l=>l.key).filter(x=>pick.includes(x))},"Front updated ✓")};
+$("#fAll").onclick=()=>saveCard({frontPick:contactLines(C()).slice(0,8).map(l=>l.key)},"Front updated ✓");
+$("#fNone").onclick=()=>saveCard({frontPick:[]},"Front cleared");
 $("#sides").onclick=e=>{const b=e.target.closest("button");if(!b)return;side=b.dataset.s;$$("#sides button").forEach(x=>x.classList.toggle("on",x===b));renderPrint()};
-async function cardCanvas(s){const c=C();return s==="front"?drawFront(c,theme):drawBack(c,cardUrl(c.id,"qr"),theme)}
-async function renderPrint(){const t=++prTok;try{const cv=await cardCanvas(side);if(t!==prTok)return;const p=$("#bcPrev");p.getContext("2d").clearRect(0,0,1050,600);p.getContext("2d").drawImage(cv,0,0)}catch(e){console.error(e)}}
+async function cardCanvas(s){const c=C();return s==="front"?drawFront(c):drawBack(c,cardUrl(c.id,"qr"))}
+async function renderPrint(){renderPrintControls();const t=++prTok;try{const cv=await cardCanvas(side);if(t!==prTok)return;const p=$("#bcPrev");p.getContext("2d").clearRect(0,0,1050,600);p.getContext("2d").drawImage(cv,0,0)}catch(e){console.error(e)}}
 $("#dlFront").onclick=async()=>{try{downloadCanvas(await cardCanvas("front"),safeName(C().name)+"-Business-Card-Front.png")}catch(e){toast("Couldn't create the card")}};
 $("#dlBack").onclick=async()=>{try{downloadCanvas(await cardCanvas("back"),safeName(C().name)+"-Business-Card-Back.png")}catch(e){toast("Couldn't create the card")}};
 

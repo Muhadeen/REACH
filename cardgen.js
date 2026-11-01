@@ -1,9 +1,4 @@
 /* Draws print-ready business cards (3.5 x 2 in @ 300 dpi) and the QR image */
-const THEMES={
- blue:{label:"Blue & Pink",bg:["#1d4ed8","#2f7bff","#ff4d9d"],ink:"#ffffff",sub:"rgba(255,255,255,.88)",tile:"#ffffff",tileInk:"#0f3a63",line:"rgba(255,255,255,.35)",accent:"#ffffff",qr:"#0a2a55"},
- white:{label:"Clean white",bg:["#ffffff","#f1f6ff"],ink:"#0f3a63",sub:"#5a6a98",tile:"#eaf1ff",tileInk:"#0f3a63",line:"#d4e1ff",accent:"#2563ff",qr:"#0a2a55",bar:true},
- navy:{label:"Midnight",bg:["#0b2a4a","#123f6d"],ink:"#ffffff",sub:"rgba(255,255,255,.82)",tile:"#ffffff",tileInk:"#0f3a63",line:"rgba(255,255,255,.25)",accent:"#ff7ab8",qr:"#0a2a55"}
-};
 const FONT='"Bricolage Grotesque","Manrope",system-ui,sans-serif',FONT2='"Manrope",system-ui,sans-serif';
 const _ic={};
 function loadImg(src,cors){const k=(cors?"c:":"n:")+src;return _ic[k]||(_ic[k]=new Promise(res=>{const i=new Image();if(cors)i.crossOrigin="anonymous";i.onload=()=>res(i);i.onerror=()=>res(null);i.src=src}))}
@@ -13,8 +8,8 @@ function wrap(x,t,w,max){const words=String(t||"").split(/\s+/),lines=[];let cur
 function paintBg(x,th,W,H){const g=x.createLinearGradient(0,0,W,H);th.bg.forEach((c,i)=>g.addColorStop(i/(th.bg.length-1),c));x.fillStyle=g;x.fillRect(0,0,W,H);
   x.fillStyle=th.bar?"rgba(37,99,255,.07)":"rgba(255,255,255,.10)";x.beginPath();x.arc(W-60,40,230,0,7);x.fill();
   x.fillStyle=th.bar?"rgba(255,77,157,.08)":"rgba(255,255,255,.07)";x.beginPath();x.arc(120,H+40,190,0,7);x.fill()}
-async function iconFor(name){const p=findPlatform(name);if(p&&p[4])return{emoji:p[4]};
-  const dom=p?p[2]:(/^[a-z0-9-]+\.[a-z.]{2,}$/i.test(String(name).trim())?String(name).trim().toLowerCase():null);
+async function iconFor(name,detail){const p=findPlatform(name);if(p&&p[4])return{emoji:p[4]};
+  const dom=p?p[2]:(/^[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(String(name).trim())?String(name).trim().toLowerCase():hostOf(detail));
   if(dom){const i=await loadImg(`https://www.google.com/s2/favicons?domain=${dom}&sz=128`,true);if(i)return{img:i}}
   const l=(String(name).trim()[0]||"?").toUpperCase();return{letter:/[A-Z0-9]/.test(l)?l:"•"}}
 function drawIcon(x,ic,a,b,s,th){x.fillStyle=th.tile;rr(x,a,b,s,s,s*.28);x.fill();
@@ -30,8 +25,8 @@ async function footerPill(x,W,H,th,right){const m=await loadImg("logo-mark.png")
 function mkCanvas(W,H){const c=document.createElement("canvas");c.width=W;c.height=H;return c}
 async function fontsReady(){try{await Promise.all([document.fonts.load('800 40px "Bricolage Grotesque"'),document.fonts.load('700 24px "Manrope"')])}catch(e){}}
 
-async function drawFront(card,tk){await fontsReady();
-  const th=THEMES[tk]||THEMES.blue,W=1050,H=600,c=mkCanvas(W,H),x=c.getContext("2d");paintBg(x,th,W,H);
+async function drawFront(card){await fontsReady();
+  const th=cardTheme(card),W=1050,H=600,c=mkCanvas(W,H),x=c.getContext("2d");paintBg(x,th,W,H);
   const photo=safeImg(card.photo)?await loadImg(card.photo):null,logoI=safeImg(card.companyLogo)?await loadImg(card.companyLogo):null;
   let tx=60;
   if(photo){x.save();x.beginPath();x.arc(135,121,75,0,7);x.clip();x.drawImage(photo,60,46,150,150);x.restore();x.strokeStyle=th.bar?"#2563ff":"rgba(255,255,255,.8)";x.lineWidth=5;x.beginPath();x.arc(135,121,75,0,7);x.stroke();tx=240}
@@ -44,20 +39,20 @@ async function drawFront(card,tk){await fontsReady();
   if(logoI){x.fillStyle="#ffffff";rr(x,W-60-190,40,190,190,30);x.fill();if(th.bar){x.strokeStyle="#d4e1ff";x.lineWidth=2;x.stroke()}
     const k=Math.min(160/logoI.width,160/logoI.height),w=logoI.width*k,h=logoI.height*k;x.drawImage(logoI,W-60-190+(190-w)/2,40+(190-h)/2,w,h)}
   x.strokeStyle=th.line;x.lineWidth=2;x.beginPath();x.moveTo(60,252);x.lineTo(W-60,252);x.stroke();
-  const items=contactLines(card).slice(0,8),per=Math.max(1,Math.ceil(items.length/2)),icons=await Promise.all(items.map(i=>iconFor(i.logoName||i.name)));
+  const all=contactLines(card),items=(Array.isArray(card.frontPick)?all.filter(l=>card.frontPick.includes(l.key)):all).slice(0,8),per=Math.max(1,Math.ceil(items.length/2)),icons=await Promise.all(items.map(i=>iconFor(i.logoName||i.name,i.value)));
   items.forEach((it,i)=>{const col=Math.floor(i/per),row=i%per,a=60+col*490,b=278+row*62,ic=icons[i].emoji||icons[i].img||icons[i].letter?icons[i]:{letter:"•"};
     if(it.icon)ic.emoji=it.icon;drawIcon(x,ic,a,b,46,th);x.fillStyle=th.ink;x.font=`700 26px ${FONT2}`;x.textAlign="left";x.fillText(fit(x,it.value,490-46-26-10),a+60,b+32)});
   if(!items.length){x.fillStyle=th.sub;x.font=`700 26px ${FONT2}`;x.fillText("Scan the QR code on the back to connect.",60,310)}
   await footerPill(x,W,H,th,"Scan the QR on the back");
-  if(th.bar){x.fillStyle="#2563ff";const g=x.createLinearGradient(0,0,W,0);g.addColorStop(0,"#1d4ed8");g.addColorStop(1,"#ff4d9d");x.fillStyle=g;x.fillRect(0,H-10,W,10)}
+  if(th.bar){x.fillStyle=th.barColor;x.fillRect(0,H-10,W,10)}
   return c}
 
 function makeQr(url,size=340,ink="#0a2a55"){const d=document.createElement("div");d.style.cssText="position:fixed;left:-9999px;top:0";document.body.appendChild(d);
   new QRCode(d,{text:url,width:size,height:size,colorDark:ink,colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M});
   const src=d.querySelector("canvas"),o=mkCanvas(size,size);o.getContext("2d").drawImage(src,0,0,size,size);d.remove();return o}
 
-async function drawBack(card,url,tk){await fontsReady();
-  const th=THEMES[tk]||THEMES.blue,W=1050,H=600,c=mkCanvas(W,H),x=c.getContext("2d");paintBg(x,th,W,H);
+async function drawBack(card,url){await fontsReady();
+  const th=cardTheme(card),W=1050,H=600,c=mkCanvas(W,H),x=c.getContext("2d");paintBg(x,th,W,H);
   x.fillStyle="#fff";rr(x,70,80,390,390,34);x.fill();if(th.bar){x.strokeStyle="#d4e1ff";x.lineWidth=2;x.stroke()}
   x.drawImage(makeQr(url,350,th.qr),90,100,350,350);
   x.textAlign="left";x.fillStyle=th.ink;x.font=`800 54px ${FONT}`;let y=150;

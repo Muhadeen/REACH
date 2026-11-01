@@ -100,9 +100,18 @@ select{appearance:auto}
 .link.inline{margin:0}
 @media(max-width:560px){.apptabs button{padding:10px 9px;font-size:.82rem}}
 .hint{font-size:.82rem;color:var(--muted);font-weight:600;margin-top:6px}
+.swatches{display:flex;flex-wrap:wrap;gap:10px}
+.sw{width:38px;height:38px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1.5px var(--line);cursor:pointer;position:relative;padding:0;transition:transform .12s}.sw:hover{transform:scale(1.1)}.sw.on{box-shadow:0 0 0 3px var(--a1)}
+.sw.custom{display:grid;place-items:center;background:conic-gradient(#f43f5e,#f59e0b,#22c55e,#0ea5e9,#8b5cf6,#f43f5e);color:#fff;font-weight:800;overflow:hidden}
+.sw.custom input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;padding:0;border:0}
+.frontList{display:grid;gap:6px;max-height:320px;overflow:auto;padding:2px}
+.chk{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1.5px solid var(--line);border-radius:14px;background:#fff;cursor:pointer;margin:0;font-weight:600}
+.chk input{width:auto;accent-color:#2563ff}.chk .t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.9rem}.chk.on{border-color:var(--a1);background:#f3f7ff}
+.btn.sm{padding:8px 14px;font-size:.85rem}
 </style></head><body>
 <header class="top"><a class="brand" href="./"><img src="logo-mark.png" alt="">REACH</a>
-<div style="display:flex;gap:8px;align-items:center"><a class="btn ghost hide" id="adminLink" href="admin.html">Admin</a><button class="btn ghost hide" id="fbTop">Feedback</button><button class="btn ghost hide" id="logout">Log out</button></div></header>
+<nav id="nav" class="nav" aria-label="Main"></nav>
+<div class="hbtns"><button class="btn ghost hide" id="fbTop">Feedback</button><button class="btn ghost hide" id="logout">Log out</button><button class="burger" id="burger" aria-label="Menu">☰</button></div></header>
 
 <div class="wrap">
 <div id="boot"><div class="spin"></div></div>
@@ -214,11 +223,18 @@ select{appearance:auto}
       <div class="pane hide" id="pane-print">
         <div class="card">
           <h2>Printable business card</h2><p class="sub">Standard size, 3.5 × 2 in. Details on the front, QR code on the back.</p>
-          <label style="margin-top:0">Design</label><div class="pills" id="themes"></div>
-          <div class="seg" id="sides"><button data-s="front" class="on">Front</button><button data-s="back">Back</button></div>
+          <label style="margin-top:0">Card colour <span class="hint" style="font-weight:600">(also colours your online card)</span></label>
+          <div class="swatches" id="swatches"></div>
+          <label>Style</label>
+          <div class="seg" id="styles"><button data-s="gradient" class="on">Gradient</button><button data-s="solid">Solid</button><button data-s="light">Light</button><button data-s="dark">Dark</button></div>
+          <label>Show on the front <span class="pill" id="frontCount">0 / 8</span></label>
+          <p class="hint" style="margin:0 0 8px">Tick what you want printed on the front (up to 8). The QR code is on the back.</p>
+          <div class="btnrow" style="margin:0 0 10px"><button class="btn ghost sm" id="fAll" type="button">Select first 8</button><button class="btn ghost sm" id="fNone" type="button">Clear all</button></div>
+          <div class="frontList" id="frontList"></div>
+          <div class="seg" id="sides" style="margin-top:18px"><button data-s="front" class="on">Front</button><button data-s="back">Back</button></div>
           <canvas id="bcPrev" width="1050" height="600"></canvas>
           <div class="acts"><button class="btn" id="dlFront">⬇ Download front</button><button class="btn" id="dlBack">⬇ Download back</button></div>
-          <p class="hint">Files are 1050 × 600 px (300 dpi). Print at 100% size (3.5 × 2 in) on card stock, or send the files to any print shop. Add more details on the Platforms and Details tabs and the card updates.</p>
+          <p class="hint">Files are 1050 × 600 px (300 dpi). Print at 100% size (3.5 × 2 in) on card stock, or send the files to any print shop.</p>
         </div>
       </div>
 
@@ -242,7 +258,7 @@ select{appearance:auto}
   </div>
 </section>
 </div>
-<footer>Built by Muhadeen ❤️ · <button class="link inline" id="fbLink" type="button">Give feedback</button></footer>
+<footer><div id="foot"></div><p>Built by Muhadeen ❤️ · <button class="link inline" id="fbLink" type="button">Give feedback</button></p></footer>
 
 <div class="modal hide" id="mNew"><div class="mbox"><h2>Create a new card</h2><p class="sub">Choose what it is for. You can change it later.</p>
   <div class="types" id="types"><button data-t="personal" class="on"><span>🙂</span>Personal</button><button data-t="business"><span>💼</span>Business</button><button data-t="other"><span>✨</span>Other</button></div>
