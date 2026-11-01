@@ -3,51 +3,63 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Contact card · REACH</title>
 <link rel="icon" href="favicon.png" type="image/png">
-
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <style>
 .page{max-width:480px;margin:auto;padding:18px 16px 40px}
-.hd{background:var(--grad);color:#fff;border-radius:28px;padding:30px 22px 26px;text-align:center;position:relative;overflow:hidden}
-.hd::before{content:"";position:absolute;width:260px;height:260px;border-radius:50%;background:rgba(255,255,255,.18);right:-90px;top:-120px}
+.hd{background:var(--grad);color:#fff;border-radius:30px;padding:30px 22px 26px;text-align:center;position:relative;overflow:hidden;box-shadow:0 26px 44px -26px rgba(37,99,255,.8)}
+.hd::before{content:"";position:absolute;width:260px;height:260px;border-radius:50%;background:rgba(255,255,255,.16);right:-90px;top:-120px}
 .hd>*{position:relative}
-.big{width:92px;height:92px;border-radius:50%;background:#fff;color:var(--ink);display:grid;place-items:center;font:800 2.4rem "Bricolage Grotesque";margin:0 auto 14px;border:5px solid rgba(255,255,255,.55);color:#2563ff}
-.hd h1{font-size:1.9rem;font-weight:800}.hd p{opacity:.8;font-weight:600;margin-top:6px}
+.big{width:104px;height:104px;border-radius:50%;background:#fff;display:grid;place-items:center;font:800 2.6rem "Bricolage Grotesque",sans-serif;margin:0 auto 14px;border:5px solid rgba(255,255,255,.6);color:#2563ff;overflow:hidden}
+.big img{width:100%;height:100%;object-fit:cover}
+.hd h1{font-size:1.9rem;font-weight:800;line-height:1.1}.hd .role{font-weight:800;opacity:.95;margin-top:6px}.hd p{opacity:.88;font-weight:600;margin-top:6px}
+.co{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px;font-weight:800}
+.co .lg{width:46px;height:46px;border-radius:13px;background:#fff;display:grid;place-items:center;overflow:hidden}.co .lg img{width:84%;height:84%;object-fit:contain}
 .list{margin-top:18px}
-.item{box-shadow:0 12px 24px -20px rgba(37,99,255,.6);display:flex;align-items:center;gap:14px;padding:14px;background:#fff;border:1.5px solid var(--line);border-radius:20px;margin-bottom:10px;color:var(--ink);text-decoration:none;transition:transform .15s,border-color .15s}
-a.item:hover{transform:translateY(-2px);border-color:var(--ink)}
-.item .t{flex:1;min-width:0}.item b{display:block}.item span{color:var(--muted);font-weight:600;overflow-wrap:anywhere;font-size:.92rem}
-.item .go{font-weight:800;color:var(--a2)}
-.cp{border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:8px 12px;font:800 .8rem Manrope,system-ui,sans-serif;cursor:pointer}
+.item{display:flex;align-items:center;gap:14px;padding:14px;background:#fff;border:1.5px solid var(--line);border-radius:20px;margin-bottom:10px;color:var(--ink);text-decoration:none;transition:transform .15s,border-color .15s;box-shadow:0 12px 24px -20px rgba(37,99,255,.6);width:100%;font:inherit;text-align:left;cursor:pointer}
+a.item:hover,button.item:hover{transform:translateY(-2px);border-color:var(--a1)}
+.item .t{flex:1;min-width:0}.item b{display:block}.item span.v{color:var(--muted);font-weight:600;overflow-wrap:anywhere;font-size:.92rem}
+.item .go{font-weight:800;color:var(--a2);font-size:.85rem}
 .cta{text-align:center;margin-top:22px;color:var(--muted);font-weight:700}.cta a{color:var(--a1);font-weight:800}
+.mini{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:26px;font-weight:800;letter-spacing:.1em;color:var(--ink);text-decoration:none}.mini img{height:30px}
 </style></head><body>
 <div class="page" id="page"><div class="spin"></div></div>
 <script src="core.js"></script>
 <script>
-const uid=new URLSearchParams(location.search).get("u");
+const qp=new URLSearchParams(location.search),id=qp.get("c")||qp.get("u"),src=qp.get("s")==="qr"?"qr":"link";
 function msg(t,s){$("#page").innerHTML=`<div class="card" style="text-align:center;margin-top:60px"><h2>${t}</h2><p class="sub">${s}</p><a class="btn accent" href="./">Create your own card</a></div>`}
 (async()=>{
-  if(!uid)return msg("No card here","This link is missing a card ID.");
+  if(!id)return msg("No card here","This link is missing a card ID.");
   try{
-    const {db}=await fb();const snap=await db.collection("users").doc(uid).get();
+    const {db,auth}=await fb();const snap=await db.collection("cards").doc(id).get();
     if(!snap.exists)return msg("Card not found","It may have been deleted, or the link is wrong.");
-    const d=snap.data(),pl=d.platforms||[];document.title=d.name+" · REACH";
+    const d=snap.data(),lines=contactLines(d);document.title=d.name+" · REACH";
+    const photo=safeImg(d.photo),clogo=safeImg(d.companyLogo);
+    const track=async(row)=>{try{const u=await authReady(auth);if(u&&u.uid===d.owner)return;
+      const rec={card:id,owner:d.owner,type:row?"click":"view",src,vid:vid(),ts:ts()};if(row)rec.p=row;await db.collection("hits").add(rec)}catch(e){}};
     $("#page").innerHTML=`
-     <div class="hd"><div class="big">${esc((d.name||"?")[0].toUpperCase())}</div><h1>${esc(d.name)}</h1>${d.bio?`<p>${esc(d.bio)}</p>`:""}</div>
-     <div class="list">${pl.length?pl.map(p=>{const href=linkFor(p.name,p.detail);
-       const inner=`${logo(p.name,48)}<div class="t"><b>${esc(displayName(p.name))}</b><span>${esc(p.detail)}</span></div>`;
-       return href?`<a class="item" href="${esc(href)}" target="_blank" rel="noopener">${inner}<span class="go">Open ↗</span></a>`
-        :`<div class="item">${inner}<button class="cp" data-c="${esc(p.detail)}">Copy</button></div>`}).join(""):'<div class="empty">No contact details added yet.</div>'}</div>
+     <div class="hd"><div class="big">${photo?`<img src="${photo}" alt="">`:esc((d.name||"?")[0].toUpperCase())}</div><h1>${esc(d.name)}</h1>
+      ${d.title?`<div class="role">${esc(d.title)}</div>`:""}
+      ${d.company?`<div class="co">${clogo?`<span class="lg"><img src="${clogo}" alt=""></span>`:""}<span>${esc(d.company)}</span></div>`:(clogo?`<div class="co"><span class="lg"><img src="${clogo}" alt=""></span></div>`:"")}
+      ${d.bio?`<p>${esc(d.bio)}</p>`:""}</div>
+     <div class="list">${lines.length?lines.map((l,i)=>{const inner=`${l.icon?`<span class="logo" style="--s:48px">${l.icon}</span>`:logo(l.logoName||l.name,48)}<div class="t"><b>${esc(l.name)}</b><span class="v">${esc(l.value)}</span></div>`;
+       return l.href?`<a class="item" data-p="${esc(l.kind)}" href="${esc(l.href)}" target="_blank" rel="noopener">${inner}<span class="go">Open ↗</span></a>`
+        :`<button class="item cp-btn" data-p="${esc(l.kind)}" data-c="${esc(l.value)}">${inner}<span class="go">Copy</span></button>`}).join(""):'<div class="empty">No contact details added yet.</div>'}</div>
      <button class="btn block" id="vc" style="margin-top:6px">➕ Save to my contacts</button>
-     <p class="cta">Want your own card? <a href="./">Make one free</a></p>`;
-    $$(".cp").forEach(b=>b.onclick=async()=>{try{await navigator.clipboard.writeText(b.dataset.c);toast("Copied ✓")}catch(e){toast(b.dataset.c)}});
-    $("#vc").onclick=()=>{const tel=pl.filter(p=>["Phone","WhatsApp"].includes(displayName(p.name))).map(p=>p.detail.replace(/[^\d+]/g,""));
-      const em=pl.filter(p=>["Email","Gmail"].includes(displayName(p.name))).map(p=>p.detail.trim());
-      const other=pl.filter(p=>!["Phone","WhatsApp","Email","Gmail"].includes(displayName(p.name)));
-      const v=["BEGIN:VCARD","VERSION:3.0","FN:"+d.name,"N:;"+d.name+";;;",...tel.map(t=>"TEL;TYPE=CELL:"+t),...em.map(e=>"EMAIL:"+e),
-        ...(d.bio?["TITLE:"+d.bio]:[]),...(other.length?["NOTE:"+other.map(p=>displayName(p.name)+": "+p.detail).join(" | ")]:[]),"END:VCARD"].join("\r\n");
-      const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([v],{type:"text/vcard"}));a.download=(d.name||"contact").replace(/\s+/g,"-")+".vcf";a.click()};
-    if(!sessionStorage.getItem("v_"+uid)){sessionStorage.setItem("v_"+uid,"1");db.collection("users").doc(uid).update({views:firebase.firestore.FieldValue.increment(1)}).catch(()=>{})}
+     <p class="cta">Want your own card? <a href="./">Make one free</a></p>
+     <a class="mini" href="./"><img src="logo-mark.png" alt="">REACH</a>`;
+    $$(".item").forEach(el=>el.addEventListener("click",async()=>{track(el.dataset.p);if(el.classList.contains("cp-btn")){try{await navigator.clipboard.writeText(el.dataset.c);toast("Copied ✓")}catch(e){toast(el.dataset.c)}}}));
+    $("#vc").onclick=()=>{
+      const tel=[],em=[],other=[];
+      lines.forEach(l=>{const k=l.kind;if(["Office phone","Phone"].includes(k))tel.push(["WORK",l.value]);else if(k==="WhatsApp")tel.push(["CELL",l.value]);else if(["Email","Gmail"].includes(k))em.push(l.value);else if(k!=="Address"&&k!=="Website")other.push(k+": "+l.value)});
+      const clean=t=>String(t||"").replace(/[\r\n;,\\]/g," ");
+      const v=["BEGIN:VCARD","VERSION:3.0","FN:"+clean(d.name),"N:;"+clean(d.name)+";;;",...(d.company?["ORG:"+clean(d.company)]:[]),...(d.title?["TITLE:"+clean(d.title)]:[]),
+        ...tel.map(t=>"TEL;TYPE="+t[0]+":"+t[1].replace(/[^\d+]/g,"")),...em.map(e=>"EMAIL:"+clean(e)),...(d.website?["URL:"+clean(/^https?:/i.test(d.website)?d.website:"https://"+d.website)]:[]),
+        ...(d.address?["ADR;TYPE=WORK:;;"+clean(d.address)+";;;;"]:[]),"URL:"+cardUrl(id),
+        ...(other.length||d.bio?["NOTE:"+clean([d.bio,...other].filter(Boolean).join(" | "))]:[]),
+        ...(photo?["PHOTO;ENCODING=b;TYPE="+(photo.startsWith("data:image/png")?"PNG":"JPEG")+":"+photo.split(",")[1]]:[]),"END:VCARD"].join("\r\n");
+      const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([v],{type:"text/vcard"}));a.download=safeName(d.name)+".vcf";a.click()};
+    if(!sessionStorage.getItem("v_"+id)){sessionStorage.setItem("v_"+id,"1");track(null)}
   }catch(e){console.error(e);msg("Couldn't load this card","Check your internet and try again.")}
 })();
 </script></body></html>

@@ -47,3 +47,14 @@ input:focus,textarea:focus{outline:none;border-color:var(--a1);box-shadow:0 0 0 
 .link{background:none;border:0;font:800 .88rem Manrope,system-ui,sans-serif;color:var(--a1);cursor:pointer;margin-top:12px;padding:0}
 @keyframes shake{20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
 .shake{animation:shake .4s}
+
+/* analytics */
+.atiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.at{border-radius:18px;padding:14px 16px;color:#fff}.at b{display:block;font:800 2rem "Bricolage Grotesque",sans-serif}.at small{font-weight:700;opacity:.92}
+.t1{background:linear-gradient(135deg,#1d4ed8,#4f8cff)}.t2{background:linear-gradient(135deg,#ff4d9d,#ff8cc0)}.t3{background:linear-gradient(135deg,#0ea5e9,#67d0ff)}.t4{background:linear-gradient(135deg,#2563ff,#ff4d9d)}
+.ah{margin:22px 0 10px;font-size:1.05rem}
+.chart{display:flex;align-items:flex-end;gap:3px;height:120px;padding:6px;background:#f4f8ff;border-radius:16px}
+.chart .col{flex:1;height:100%;display:flex;align-items:flex-end}.chart i{display:block;width:100%;border-radius:4px 4px 2px 2px;background:#cfdcff}.chart i.on{background:var(--grad)}
+.axis{display:flex;justify-content:space-between;color:var(--muted);font-size:.75rem;font-weight:700;margin-top:6px}
+.bar{display:flex;align-items:center;gap:10px;margin:8px 0;position:relative}.bar .bl{width:110px;flex:none;font-weight:800;font-size:.88rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar i{display:block;height:14px;border-radius:99px;background:var(--grad);flex:none;max-width:calc(100% - 200px)}.bar b{font-weight:800;margin-left:auto}

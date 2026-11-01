@@ -3,21 +3,29 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex">
 <title>REACH · Admin</title>
 <link rel="icon" href="favicon.png" type="image/png">
-
+<link rel="manifest" href="admin.webmanifest"><link rel="apple-touch-icon" href="icon-192.png"><meta name="theme-color" content="#1d4ed8">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <style>
-.bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0}.bar input{flex:1 1 220px}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
-.stat{border-radius:20px;padding:16px 18px;color:#fff;border:0}.stat:nth-child(1){background:linear-gradient(135deg,#1d4ed8,#4f8cff)}.stat:nth-child(2){background:linear-gradient(135deg,#ff4d9d,#ff8cc0)}.stat:nth-child(3){background:linear-gradient(135deg,#0ea5e9,#67d0ff)}.stat b{display:block;font:800 2rem "Bricolage Grotesque"}.stat small{font-weight:700;color:rgba(255,255,255,.92)}
+.bar2{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0}.bar2 input{flex:1 1 220px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
+.stat{border-radius:20px;padding:16px 18px;color:#fff}.stat b{display:block;font:800 2rem "Bricolage Grotesque",sans-serif}.stat small{font-weight:700;color:rgba(255,255,255,.92)}
+.stat:nth-child(1){background:linear-gradient(135deg,#1d4ed8,#4f8cff)}.stat:nth-child(2){background:linear-gradient(135deg,#ff4d9d,#ff8cc0)}.stat:nth-child(3){background:linear-gradient(135deg,#0ea5e9,#67d0ff)}.stat:nth-child(4){background:linear-gradient(135deg,#2563ff,#ff4d9d)}
+.tabs2{display:flex;gap:6px;background:#eaf1ff;border-radius:16px;padding:5px;margin:16px 0;overflow-x:auto}
+.tabs2 button{flex:1;white-space:nowrap;border:0;background:none;font:800 .92rem Manrope,system-ui,sans-serif;padding:11px 14px;border-radius:12px;cursor:pointer;color:var(--muted)}.tabs2 button.on{background:#fff;color:var(--ink);box-shadow:0 3px 10px -4px rgba(37,99,255,.5)}
 details{background:#fff;border:1.5px solid var(--line);border-radius:20px;margin-top:10px;overflow:hidden}
 summary{list-style:none;cursor:pointer;display:flex;gap:12px;align-items:center;padding:14px 16px}summary::-webkit-details-marker{display:none}
-.av{width:44px;height:44px;border-radius:50%;background:var(--grad);color:#fff;display:grid;place-items:center;font:800 1.15rem "Bricolage Grotesque";flex:none}
-summary .t{flex:1;min-width:0}summary b{display:block}summary span{color:var(--muted);font-weight:600;font-size:.88rem;overflow-wrap:anywhere}
-.inner{padding:0 16px 16px;border-top:1.5px solid var(--line)}
+.av{width:46px;height:46px;border-radius:50%;background:var(--grad);color:#fff;display:grid;place-items:center;font:800 1.15rem "Bricolage Grotesque",sans-serif;flex:none;overflow:hidden}.av img{width:100%;height:100%;object-fit:cover}
+summary .t{flex:1;min-width:0}summary b{display:block}summary span.m{color:var(--muted);font-weight:600;font-size:.88rem;overflow-wrap:anywhere}
+.inner{padding:4px 16px 16px;border-top:1.5px solid var(--line)}
+.ucard{margin-top:12px;padding:14px;border:1.5px solid var(--line);border-radius:18px;background:#f8fbff}
+.ucard h3{font-size:1.02rem;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.info{font-weight:600;font-size:.88rem;color:var(--muted);margin:6px 0;line-height:1.5}
 .inner .row input{flex:1 1 130px;padding:10px 12px}
-.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.fb{background:#fff;border:1.5px solid var(--line);border-radius:18px;padding:14px 16px;margin-top:10px}.fb .st{letter-spacing:2px}
 #login{max-width:400px;margin:8vh auto}
+.help{background:linear-gradient(135deg,#eef4ff,#fff0f7);border:1.5px solid var(--line);border-radius:18px;padding:14px 16px;font-weight:600;font-size:.9rem;color:var(--muted);margin-bottom:6px}
 </style></head><body>
 <header class="top"><a class="brand" href="./"><img src="logo-mark.png" alt="">REACH ADMIN</a><button class="btn ghost hide" id="out">Log out</button></header>
 <div class="wrap">
@@ -31,15 +39,22 @@ summary .t{flex:1;min-width:0}summary b{display:block}summary span{color:var(--m
 </div>
 
 <div id="app" class="hide">
-  <div class="stats"><div class="stat"><b id="sU">0</b><small>Users</small></div><div class="stat"><b id="sP">0</b><small>Platforms added</small></div><div class="stat"><b id="sV">0</b><small>Card views</small></div></div>
-  <div class="bar"><input id="q" type="search" placeholder="Search by name, email or platform…"><button class="btn accent" id="xl">⬇ Download Excel</button><button class="btn ghost" id="rf">Refresh</button></div>
-  <div id="users"></div>
+  <div class="stats"><div class="stat"><b id="sU">0</b><small>Users</small></div><div class="stat"><b id="sC">0</b><small>Cards</small></div><div class="stat"><b id="sV">0</b><small>Card views</small></div><div class="stat"><b id="sF">0</b><small>Feedback</small></div></div>
+  <div class="tabs2" id="tabs"><button data-t="users" class="on">👥 Users</button><button data-t="stats">📊 Analytics</button><button data-t="fb">💬 Feedback</button></div>
+
+  <div id="p-users">
+    <div class="help">Forgot-password help: open the user, check you're talking to the right person, then tap <b>Send reset email</b>. Firebase emails them a link to choose a new password.</div>
+    <div class="bar2"><input id="q" type="search" placeholder="Search by name, email, company or platform…"><button class="btn accent" id="xl">⬇ Download Excel</button><button class="btn ghost" id="rf">Refresh</button></div>
+    <div id="users"></div>
+  </div>
+  <div id="p-stats" class="hide"><div class="card" id="aBody"></div></div>
+  <div id="p-fb" class="hide"><div id="fbList"></div></div>
 </div>
 </div>
 <script src="core.js"></script>
 <script>
-let db,auth,users=[];
-function show(v){["boot","login","app"].forEach(x=>$("#"+x).classList.toggle("hide",x!==v));$("#out").classList.toggle("hide",v==="login"||v==="boot")}
+let db,auth,U=[],cardsAll=[],hitsAll=[],fbAll=[],loadedHits=false;
+function show(v){["boot","login","app"].forEach(x=>$("#"+x).classList.toggle("hide",x!==v));$("#out").classList.toggle("hide",v!=="app")}
 (async()=>{
   try{const f=await fb();db=f.db;auth=f.auth}catch(e){$("#boot").innerHTML='<p class="err" style="text-align:center">Could not load. Refresh.</p>';return}
   await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
@@ -48,54 +63,90 @@ function show(v){["boot","login","app"].forEach(x=>$("#"+x).classList.toggle("hi
     if((u.email||"").toLowerCase()!==ADMIN_EMAIL.toLowerCase()){await auth.signOut();$("#err").textContent="This account isn't allowed in the admin area.";show("login");return}
     show("boot");await load();show("app")})
 })();
-$("#lf").onsubmit=async e=>{e.preventDefault();$("#err").textContent="";
-  try{await auth.signInWithEmailAndPassword($("#em").value.trim().toLowerCase(),$("#pw").value)}
-  catch(x){$("#err").className="err";$("#err").textContent=authMsg(x.code);const b=$("#login");b.classList.remove("shake");void b.offsetWidth;b.classList.add("shake")}};
+const shake=()=>{const b=$("#login");b.classList.remove("shake");void b.offsetWidth;b.classList.add("shake")};
+$("#lf").onsubmit=async e=>{e.preventDefault();$("#err").textContent="";$("#err").className="err";
+  try{await auth.signInWithEmailAndPassword($("#em").value.trim().toLowerCase(),$("#pw").value)}catch(x){$("#err").textContent=authMsg(x.code);shake()}};
 $("#sp").onclick=()=>{const i=$("#pw"),s=i.type==="password";i.type=s?"text":"password";$("#sp").textContent=s?"Hide":"Show"};
 $("#fg").onclick=async()=>{const em=$("#em").value.trim().toLowerCase(),e=$("#err");
   if(!em){e.className="err";return e.textContent="Type your email above first."}
   try{await auth.sendPasswordResetEmail(em)}catch(x){if(x.code==="auth/invalid-email"){e.className="err";return e.textContent=authMsg(x.code)}}
   e.className="err ok";e.textContent="If that email has an account, a reset link is on its way. Check spam too."};
-$("#out").onclick=()=>auth.signOut();$("#rf").onclick=async()=>{await load();toast("Refreshed")};
+$("#out").onclick=()=>auth.signOut();$("#rf").onclick=async()=>{await load(true);toast("Refreshed")};
 
 async function load(){
   try{
-    const [us,ps]=await Promise.all([db.collection("users").get(),db.collection("private").get()]);
+    const [us,ps,cs,fs,hs]=await Promise.all([db.collection("users").get(),db.collection("private").get(),db.collection("cards").get(),db.collection("feedback").get(),db.collection("hits").limit(20000).get()]);
+    hitsAll=hs.docs.map(d=>{const v=d.data();return{...v,ts:ms(v.ts)||Date.now()}});$("#sV").textContent=hitsAll.filter(h=>h.type==="view").length;
     const priv={};ps.forEach(d=>priv[d.id]=d.data());
-    users=us.docs.map(d=>{const v=d.data(),p=priv[d.id]||{};return{id:d.id,name:v.name||p.name||"(no name)",email:p.email||"",bio:v.bio||"",platforms:v.platforms||[],views:v.views||0,createdAt:v.createdAt?v.createdAt.toMillis():0}})
-      .sort((a,b)=>b.createdAt-a.createdAt);
-    render();
-  }catch(e){console.error(e);$("#users").innerHTML='<div class="empty">Couldn\'t read data. Make sure the new Firestore rules are published.</div>'}}
+    cardsAll=cs.docs.map(d=>({id:d.id,...d.data()}));
+    U=us.docs.map(d=>{const v=d.data(),p=priv[d.id]||{};return{id:d.id,name:v.name||p.name||"(no name)",email:p.email||"",createdAt:ms(v.createdAt),cards:cardsAll.filter(c=>c.owner===d.id).sort((a,b)=>ms(a.createdAt)-ms(b.createdAt))}}).sort((a,b)=>b.createdAt-a.createdAt);
+    fbAll=fs.docs.map(d=>({id:d.id,...d.data(),ts:ms(d.data().ts)})).sort((a,b)=>b.ts-a.ts);
+    loadedHits=true;
+    render();renderFb();
+  }catch(e){console.error(e);$("#users").innerHTML='<div class="empty">Couldn\'t read data. Make sure the latest Firestore rules are published.</div>'}}
 
 function render(){
   const q=norm($("#q").value||"");
-  const list=users.filter(u=>!q||norm(u.name+u.email+u.platforms.map(p=>p.name+p.detail).join("")).includes(q));
-  $("#sU").textContent=users.length;$("#sP").textContent=users.reduce((a,u)=>a+u.platforms.length,0);$("#sV").textContent=users.reduce((a,u)=>a+u.views,0);
+  const hay=u=>u.name+u.email+u.cards.map(c=>c.label+c.name+c.company+c.title+(c.platforms||[]).map(p=>p.name+p.detail).join("")).join("");
+  const list=U.filter(u=>!q||norm(hay(u)).includes(q));
+  $("#sU").textContent=U.length;$("#sC").textContent=cardsAll.length;$("#sF").textContent=fbAll.length;
   const open=new Set($$("details[open]").map(d=>d.dataset.id));
-  $("#users").innerHTML=list.length?list.map(u=>`<details data-id="${u.id}" ${open.has(u.id)?"open":""}>
-    <summary><div class="av">${esc(u.name[0].toUpperCase())}</div><div class="t"><b>${esc(u.name)}</b><span>${esc(u.email)} · ${u.platforms.length} platforms · ${u.views} views</span></div><span class="pill">View</span></summary>
-    <div class="inner">${u.platforms.length?u.platforms.map(p=>`<div class="row edit" data-uid="${u.id}" data-pid="${p.id}">${logo(p.name,40)}<input data-f="name" value="${esc(p.name)}"><input data-f="detail" value="${esc(p.detail)}"><button class="ic" data-act="save" title="Save">✓</button><button class="ic danger" data-act="del" title="Delete">🗑</button></div>`).join(""):'<div class="empty">No platforms yet.</div>'}
-    <div class="tools"><a class="btn ghost" href="${esc(cardUrl(u.id))}" target="_blank" rel="noopener">Open card ↗</a><button class="btn ghost" data-act="deluser" data-uid="${u.id}" style="color:#c1121f">Delete user data</button></div></div></details>`).join(""):'<div class="empty">No users yet.</div>'}
+  $("#users").innerHTML=list.length?list.map(u=>{const np=u.cards.reduce((a,c)=>a+(c.platforms||[]).length,0),ph=u.cards.map(c=>safeImg(c.photo)).find(Boolean);
+    return `<details data-id="${u.id}" ${open.has(u.id)?"open":""}>
+    <summary><div class="av">${ph?`<img src="${ph}" alt="">`:esc(u.name[0].toUpperCase())}</div><div class="t"><b>${esc(u.name)}</b><span class="m">${esc(u.email)} · ${u.cards.length} card${u.cards.length===1?"":"s"} · ${np} platforms · joined ${when(u.createdAt)}</span></div><span class="pill">Open</span></summary>
+    <div class="inner"><div class="tools"><button class="btn" data-act="reset" data-uid="${u.id}">✉️ Send reset email</button><button class="btn ghost" data-act="deluser" data-uid="${u.id}" style="color:#d6204a">Delete user data</button></div>
+    ${u.cards.map(c=>`<div class="ucard"><h3>${esc(c.label||"Card")} <span class="pill">${esc(c.type||"personal")}</span></h3>
+      <div class="info">${[c.name,c.title,c.company,c.address,c.website,c.officePhone&&"Office: "+c.officePhone,c.businessWhatsApp&&"WhatsApp: "+c.businessWhatsApp].filter(Boolean).map(esc).join(" · ")}</div>
+      ${(c.platforms||[]).length?c.platforms.map(p=>`<div class="row edit" data-cid="${c.id}" data-pid="${p.id}">${logo(p.name,40)}<input data-f="name" value="${esc(p.name)}"><input data-f="detail" value="${esc(p.detail)}"><button class="ic" data-act="save" title="Save">✓</button><button class="ic danger" data-act="del" title="Delete">🗑</button></div>`).join(""):'<div class="empty">No platforms yet.</div>'}
+      <div class="tools"><a class="btn ghost" href="${esc(cardUrl(c.id))}" target="_blank" rel="noopener">Open card ↗</a><button class="btn ghost" data-act="delcard" data-cid="${c.id}" style="color:#d6204a">Delete card</button></div></div>`).join("")||'<div class="empty">No cards yet.</div>'}</div></details>`}).join(""):'<div class="empty">No users yet.</div>'}
 $("#q").oninput=render;
 
 $("#users").onclick=async e=>{const b=e.target.closest("[data-act]");if(!b)return;const act=b.dataset.act;
-  if(act==="deluser"){const u=users.find(x=>x.id===b.dataset.uid);
+  if(act==="reset"){const u=U.find(x=>x.id===b.dataset.uid);if(!u.email)return toast("No email on file for this user");
+    if(!confirm("Send a password reset email to "+u.email+"?"))return;
+    try{await auth.sendPasswordResetEmail(u.email);toast("Reset email sent to "+u.email)}catch(x){toast("Couldn't send: "+(x.code||"error"))}return}
+  if(act==="deluser"){const u=U.find(x=>x.id===b.dataset.uid);
     if(!confirm("Delete all card data for "+u.name+"? (Their login account stays in Firebase Authentication.)"))return;
-    try{await db.collection("users").doc(u.id).delete();await db.collection("private").doc(u.id).delete();users=users.filter(x=>x.id!==u.id);render();toast("User data deleted")}catch(x){toast("Failed")}return}
-  const row=b.closest(".row"),u=users.find(x=>x.id===row.dataset.uid),i=u.platforms.findIndex(p=>p.id===row.dataset.pid);
-  if(act==="save"){const name=$('[data-f="name"]',row).value.trim(),detail=$('[data-f="detail"]',row).value.trim();if(!name||!detail)return toast("Both fields needed");u.platforms[i]={...u.platforms[i],name:displayName(name),detail}}
-  if(act==="del"){if(!confirm("Delete this platform?"))return;u.platforms.splice(i,1)}
-  try{await db.collection("users").doc(u.id).update({platforms:u.platforms,updatedAt:ts()});toast(act==="del"?"Deleted":"Saved ✓");render()}catch(x){toast("Failed to save")}};
+    try{for(const c of u.cards)await db.collection("cards").doc(c.id).delete();await db.collection("users").doc(u.id).delete();await db.collection("private").doc(u.id).delete();await load();toast("User data deleted")}catch(x){toast("Failed")}return}
+  if(act==="delcard"){const c=cardsAll.find(x=>x.id===b.dataset.cid);if(!confirm("Delete the card “"+(c.label||c.name)+"”?"))return;
+    try{await db.collection("cards").doc(c.id).delete();await load();toast("Card deleted")}catch(x){toast("Failed")}return}
+  const row=b.closest(".row"),c=cardsAll.find(x=>x.id===row.dataset.cid),pl=[...(c.platforms||[])],i=pl.findIndex(p=>p.id===row.dataset.pid);
+  if(act==="save"){const name=$('[data-f="name"]',row).value.trim(),detail=$('[data-f="detail"]',row).value.trim();if(!name||!detail)return toast("Both fields needed");pl[i]={...pl[i],name:displayName(name),detail}}
+  if(act==="del"){if(!confirm("Delete this platform?"))return;pl.splice(i,1)}
+  try{await db.collection("cards").doc(c.id).update({platforms:pl,updatedAt:ts()});c.platforms=pl;toast(act==="del"?"Deleted":"Saved ✓");render()}catch(x){toast("Failed to save")}};
 
-/* ---------- Excel: Name | Login (email) | one column per platform | Joined ---------- */
+/* tabs */
+$("#tabs").onclick=async e=>{const b=e.target.closest("button");if(!b)return;const t=b.dataset.t;
+  $$("#tabs button").forEach(x=>x.classList.toggle("on",x===b));["users","stats","fb"].forEach(k=>$("#p-"+k).classList.toggle("hide",k!==t));
+  if(t==="stats")await renderStats()};
+async function renderStats(){
+  $("#aBody").innerHTML='<div class="spin" style="margin:30px auto"></div>';
+  try{if(!loadedHits){const s=await db.collection("hits").limit(20000).get();hitsAll=s.docs.map(d=>{const v=d.data();return{...v,ts:ms(v.ts)||Date.now()}});loadedHits=true}
+    const names={};cardsAll.forEach(c=>names[c.id]=(c.name||"")+(c.label?" ("+c.label+")":""));
+    $("#sV").textContent=hitsAll.filter(h=>h.type==="view").length;
+    $("#aBody").innerHTML='<h2>Platform-wide analytics</h2><p class="sub">All cards, all users.</p>'+analyticsHtml(hitsAll,{names})}
+  catch(x){console.error(x);$("#aBody").innerHTML='<div class="empty">Couldn\'t load analytics. Publish the latest Firestore rules.</div>'}}
+
+/* feedback */
+function renderFb(){const avg=fbAll.filter(f=>f.rating).reduce((a,f,_,r)=>a+f.rating/r.length,0);
+  $("#fbList").innerHTML=(fbAll.length?`<p class="sub" style="margin-top:6px">${fbAll.length} message${fbAll.length===1?"":"s"}${avg?" · average rating "+avg.toFixed(1)+" / 5":""}</p>`:"")+
+   (fbAll.length?fbAll.map(f=>`<div class="fb"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>${esc(f.name||"Anonymous")} ${f.email?`<span class="sub" style="font-weight:600">· ${esc(f.email)}</span>`:""}</b><span class="sub" style="font-size:.8rem">${when(f.ts)} · ${esc(f.from||"")}</span></div>
+     ${f.rating?`<div class="st">${"⭐".repeat(f.rating)}</div>`:""}<p style="margin-top:6px;font-weight:600;overflow-wrap:anywhere">${esc(f.message)}</p><button class="btn ghost" data-id="${f.id}" style="margin-top:8px;padding:8px 14px;color:#d6204a">Delete</button></div>`).join(""):'<div class="empty">No feedback yet.</div>')}
+$("#fbList").onclick=async e=>{const b=e.target.closest("button[data-id]");if(!b||!confirm("Delete this feedback?"))return;
+  try{await db.collection("feedback").doc(b.dataset.id).delete();fbAll=fbAll.filter(f=>f.id!==b.dataset.id);$("#sF").textContent=fbAll.length;renderFb()}catch(x){toast("Failed")}};
+
+/* ---------- Excel ---------- */
 $("#xl").onclick=async()=>{
-  if(!users.length)return toast("No users to export yet");
+  if(!U.length)return toast("No users to export yet");
   try{await loadJs(XLSX_URL)}catch(e){return toast("Couldn't load Excel tool. Check internet.")}
   const keys=[],label={};
-  users.forEach(u=>u.platforms.forEach(p=>{const k=norm(displayName(p.name));if(!label[k]){label[k]=displayName(p.name);keys.push(k)}}));
-  const rows=[["Name","Login (email)",...keys.map(k=>label[k]),"Joined"]];
-  users.forEach(u=>rows.push([u.name,u.email,...keys.map(k=>u.platforms.filter(p=>norm(displayName(p.name))===k).map(p=>p.detail).join(" | ")),u.createdAt?new Date(u.createdAt).toLocaleDateString("en-GB"):""]));
-  const ws=XLSX.utils.aoa_to_sheet(rows);ws["!cols"]=rows[0].map((_,c)=>({wch:Math.min(40,Math.max(12,...rows.map(r=>String(r[c]||"").length+2)))}));
-  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"REACH users");
+  U.forEach(u=>u.cards.forEach(c=>(c.platforms||[]).forEach(p=>{const k=norm(displayName(p.name));if(!label[k]){label[k]=displayName(p.name);keys.push(k)}})));
+  const vals=(cs,k)=>cs.flatMap(c=>(c.platforms||[]).filter(p=>norm(displayName(p.name))===k).map(p=>p.detail)).join(" | ");
+  const r1=[["Name","Login (email)",...keys.map(k=>label[k]),"Cards","Joined"]];
+  U.forEach(u=>r1.push([u.name,u.email,...keys.map(k=>vals(u.cards,k)),u.cards.length,u.createdAt?new Date(u.createdAt).toLocaleDateString("en-GB"):""]));
+  const r2=[["Owner","Login (email)","Card","Type","Name on card","Job title","Company","Address","Website","Office phone","Business WhatsApp",...keys.map(k=>label[k]),"Created"]];
+  U.forEach(u=>u.cards.forEach(c=>r2.push([u.name,u.email,c.label||"",c.type||"",c.name||"",c.title||"",c.company||"",c.address||"",c.website||"",c.officePhone||"",c.businessWhatsApp||"",...keys.map(k=>vals([c],k)),ms(c.createdAt)?new Date(ms(c.createdAt)).toLocaleDateString("en-GB"):""])));
+  const wb=XLSX.utils.book_new();
+  [["REACH users",r1],["All cards",r2]].forEach(([n,r])=>{const ws=XLSX.utils.aoa_to_sheet(r);ws["!cols"]=r[0].map((_,c)=>({wch:Math.min(40,Math.max(12,...r.map(x=>String(x[c]??"").length+2)))}));XLSX.utils.book_append_sheet(wb,ws,n)});
   XLSX.writeFile(wb,"REACH-users-"+new Date().toISOString().slice(0,10)+".xlsx");toast("Excel downloaded ✓")};
 </script></body></html>
