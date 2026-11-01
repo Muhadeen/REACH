@@ -8,14 +8,38 @@ function wrap(x,t,w,max){const words=String(t||"").split(/\s+/),lines=[];let cur
 function paintBg(x,th,W,H){const g=x.createLinearGradient(0,0,W,H);th.bg.forEach((c,i)=>g.addColorStop(i/(th.bg.length-1),c));x.fillStyle=g;x.fillRect(0,0,W,H);
   x.fillStyle=th.bar?"rgba(37,99,255,.07)":"rgba(255,255,255,.10)";x.beginPath();x.arc(W-60,40,230,0,7);x.fill();
   x.fillStyle=th.bar?"rgba(255,77,157,.08)":"rgba(255,255,255,.07)";x.beginPath();x.arc(120,H+40,190,0,7);x.fill()}
+/* Brand logos for the downloadable card. Real logos come from the Simple Icons set on jsDelivr (which allows
+   drawing into a canvas). If a logo can't load, a coloured brand badge is drawn instead, so it never looks blank. */
+const BRAND={"Instagram":["instagram","E4405F"],"WhatsApp":["whatsapp","25D366"],"Facebook":["facebook","0866FF"],"Messenger":["messenger","0084FF"],"X (Twitter)":["x","000000"],
+"TikTok":["tiktok","000000"],"Snapchat":["snapchat","FFFC00"],"LinkedIn":["linkedin","0A66C2"],"Telegram":["telegram","26A5E4"],"YouTube":["youtube","FF0000"],"YouTube Music":["youtubemusic","FF0000"],
+"Threads":["threads","000000"],"Pinterest":["pinterest","BD081C"],"Reddit":["reddit","FF4500"],"Tumblr":["tumblr","36465D"],"Medium":["medium","000000"],"Substack":["substack","FF6719"],
+"Twitch":["twitch","9146FF"],"Discord":["discord","5865F2"],"Slack":["slack","4A154B"],"Signal":["signal","3A76F0"],"Viber":["viber","7360F2"],"Skype":["skype","00AFF0"],"Zoom":["zoom","0B5CFF"],
+"Mastodon":["mastodon","6364FF"],"Bluesky":["bluesky","0285FF"],"LINE":["line","00C300"],"KakaoTalk":["kakaotalk","FFCD00"],"Naver":["naver","03C75A"],"WeChat":["wechat","07C160"],
+"Weibo":["sinaweibo","E6162D"],"QQ":["tencentqq","EB1923"],"Bilibili":["bilibili","00A1D6"],"Zhihu":["zhihu","0084FF"],"VK":["vk","0077FF"],"GitHub":["github","181717"],"GitLab":["gitlab","FC6D26"],
+"Stack Overflow":["stackoverflow","F58025"],"Kaggle":["kaggle","20BEFF"],"Hugging Face":["huggingface","FFD21E"],"LeetCode":["leetcode","FFA116"],"CodePen":["codepen","000000"],"Figma":["figma","F24E1E"],
+"Behance":["behance","1769FF"],"Dribbble":["dribbble","EA4C89"],"ArtStation":["artstation","13AFF0"],"DeviantArt":["deviantart","05CC47"],"Flickr":["flickr","0063DC"],"Vimeo":["vimeo","1AB7EA"],
+"Notion":["notion","000000"],"Calendly":["calendly","006BFF"],"WordPress":["wordpress","21759B"],"Blogger":["blogger","FF5722"],"Shopify":["shopify","7AB55C"],"Patreon":["patreon","FF424D"],
+"Ko-fi":["kofi","FF6433"],"Buy Me a Coffee":["buymeacoffee","FFDD00"],"Upwork":["upwork","6FDA44"],"Fiverr":["fiverr","1DBF73"],"Spotify":["spotify","1ED760"],"Apple Music":["applemusic","FA243C"],
+"SoundCloud":["soundcloud","FF3300"],"Deezer":["deezer","A238FF"],"TIDAL":["tidal","000000"],"Bandcamp":["bandcamp","629AA9"],"Amazon":["amazon","FF9900"],"eBay":["ebay","E53238"],"Etsy":["etsy","F1641E"],
+"AliExpress":["aliexpress","FF4747"],"Alibaba":["alibabadotcom","FF6A00"],"Airbnb":["airbnb","FF5A5F"],"Uber":["uber","000000"],"Strava":["strava","FC4C02"],"Steam":["steam","000000"],
+"PlayStation":["playstation","003791"],"Xbox":["xbox","107C10"],"Roblox":["roblox","000000"],"PayPal":["paypal","003087"],"Cash App":["cashapp","00C244"],"Venmo":["venmo","3D95CE"],"Stripe":["stripe","635BFF"],
+"Gmail":["gmail","EA4335"],"Outlook":["microsoftoutlook","0078D4"],"Proton Mail":["protonmail","6D4AFF"],"Google Maps":["googlemaps","4285F4"]};
+const _svg={};
+function brandSvg(slug,fill){const k=slug+fill;return _svg[k]||(_svg[k]=(async()=>{try{
+  const r=await fetch(`https://cdn.jsdelivr.net/npm/simple-icons@11/icons/${slug}.svg`);if(!r.ok)return null;let t=await r.text();if(!t.includes("<svg"))return null;
+  t=t.replace("<svg ",`<svg width="256" height="256" fill="${fill}" `);return await loadImg("data:image/svg+xml;charset=utf-8,"+encodeURIComponent(t),false)}catch(e){return null}})())}
 async function iconFor(name,detail){const p=findPlatform(name);if(p&&p[4])return{emoji:p[4]};
+  const br=p&&BRAND[p[0]],hex=br?"#"+br[1]:null,bright=hex?_lum(hex)>.5:false;
+  if(br){const img=await brandSvg(br[0],bright?"#111111":hex);if(img)return{img,tile:bright?hex:null}}
   const dom=p?p[2]:(/^[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(String(name).trim())?String(name).trim().toLowerCase():hostOf(detail));
   if(dom){const i=await loadImg(`https://www.google.com/s2/favicons?domain=${dom}&sz=128`,true);if(i)return{img:i}}
-  const l=(String(name).trim()[0]||"?").toUpperCase();return{letter:/[A-Z0-9]/.test(l)?l:"•"}}
-function drawIcon(x,ic,a,b,s,th){x.fillStyle=th.tile;rr(x,a,b,s,s,s*.28);x.fill();
+  const l=(String(name).trim()[0]||"?").toUpperCase(),L=/[\p{L}\p{N}]/u.test(l)?l:"•";
+  if(br)return{letter:L,tile:hex,ink:bright?"#111111":"#ffffff"};
+  return{letter:L}}
+function drawIcon(x,ic,a,b,s,th){x.fillStyle=ic.tile||th.tile;rr(x,a,b,s,s,s*.28);x.fill();
   if(ic.img){const p=s*.2;x.drawImage(ic.img,a+p,b+p,s-2*p,s-2*p)}
   else if(ic.emoji){x.font=`${s*.55}px system-ui,"Apple Color Emoji","Segoe UI Emoji",sans-serif`;x.textAlign="center";x.textBaseline="middle";x.fillStyle="#000";x.fillText(ic.emoji,a+s/2,b+s/2+2);x.textBaseline="alphabetic";x.textAlign="left"}
-  else{x.font=`800 ${s*.5}px ${FONT}`;x.textAlign="center";x.textBaseline="middle";x.fillStyle=th.tileInk;x.fillText(ic.letter,a+s/2,b+s/2+2);x.textBaseline="alphabetic";x.textAlign="left"}}
+  else{x.font=`800 ${s*.5}px ${FONT}`;x.textAlign="center";x.textBaseline="middle";x.fillStyle=ic.ink||th.tileInk;x.fillText(ic.letter,a+s/2,b+s/2+2);x.textBaseline="alphabetic";x.textAlign="left"}}
 async function footerPill(x,W,H,th,right){const m=await loadImg("logo-mark.png");
   x.fillStyle="rgba(255,255,255,.96)";rr(x,40,H-78,262,56,28);x.fill();
   if(th.bar){x.strokeStyle="#d4e1ff";x.lineWidth=2;x.stroke()}
