@@ -166,7 +166,7 @@ select{appearance:auto}
   <div class="cardbar" id="cardbar"></div>
   <div class="grid">
     <div class="main">
-      <div class="apptabs" id="tabs"><button data-t="links" class="on">🔗 Platforms</button><button data-t="details">📝 Details</button><button data-t="print">🖨 Print card</button><button data-t="stats">📊 Analytics</button></div>
+      <div class="apptabs" id="tabs"><button data-t="links" class="on">🔗 Platforms</button><button data-t="details">📝 Details</button><button data-t="print">🖨 Print card</button><button data-t="orders">🛒 Orders</button><button data-t="stats">📊 Analytics</button></div>
 
       <div class="pane" id="pane-links">
         <div class="card addcard">
@@ -203,6 +203,8 @@ select{appearance:auto}
           <label for="dName">Name on card</label><input id="dName" maxlength="60">
           <label for="dTitle">Position or job title</label><input id="dTitle" maxlength="70" placeholder="e.g. Marketing Manager">
           <label for="dBio">Short bio</label><input id="dBio" maxlength="140" placeholder="e.g. Photographer in Accra">
+          <label for="dAbout">About me <span style="font-weight:600;color:var(--muted)">(people can read this on your card)</span></label><textarea id="dAbout" rows="5" maxlength="800" placeholder="Tell people who you are, what you do and how you can help them…"></textarea>
+          <p class="hint" id="aboutCount" style="text-align:right">0 / 800</p>
           <div class="biz hide" id="bizBox">
             <h3>Business details</h3><p class="sub" style="margin-bottom:8px">Shown on your card and printed business card.</p>
             <div class="photoRow"><div class="pav sq" id="lav">🏢</div><div><b>Company logo</b><p class="hint" style="margin:2px 0 8px">PNG with a clear background works best.</p>
@@ -236,6 +238,32 @@ select{appearance:auto}
           <div class="acts"><button class="btn" id="dlFront">⬇ Download front</button><button class="btn" id="dlBack">⬇ Download back</button></div>
           <p class="hint">Files are 1050 × 600 px (300 dpi). Print at 100% size (3.5 × 2 in) on card stock, or send the files to any print shop.</p>
         </div>
+      </div>
+
+      <div class="pane hide" id="pane-orders">
+        <div class="card" id="ordFormCard">
+          <h2>Order printed business cards</h2><p class="sub">We print your card design and get it to you. You pay by bank or mobile money, then upload your proof of payment.</p>
+          <div class="note info hide" id="ordPaused">Orders are paused right now. Please check back soon.</div>
+          <form id="ordForm" novalidate>
+            <label for="oCard" style="margin-top:0">Which card should we print?</label><select id="oCard"></select>
+            <canvas id="oPrev" width="1050" height="600" style="width:100%;max-width:380px;height:auto;aspect-ratio:7/4;border-radius:14px;margin-top:10px;box-shadow:0 14px 26px -16px rgba(15,58,99,.5);display:block"></canvas>
+            <p class="hint">This is the front. Your QR code is printed on the back.</p>
+            <label>How many cards?</label>
+            <div class="pills" id="oQty"></div>
+            <input id="oQtyIn" type="number" min="1" max="100000" placeholder="Or type a quantity" inputmode="numeric">
+            <label>How would you like to get them?</label>
+            <div class="seg" id="oMethod"><button data-m="delivery" class="on" type="button">🚚 Delivery</button><button data-m="pickup" type="button">🏪 Pickup</button></div>
+            <p class="hint hide" id="oPickNote"></p>
+            <div class="two"><div><label for="oName">Full name</label><input id="oName" maxlength="60" autocomplete="name"></div><div><label for="oPhone">Phone (WhatsApp)</label><input id="oPhone" type="tel" maxlength="25" autocomplete="tel"></div></div>
+            <div id="oLoc"><div class="two"><div><label for="oRegion">Region</label><input id="oRegion" maxlength="50" placeholder="e.g. Greater Accra"></div><div><label for="oCity">City / town</label><input id="oCity" maxlength="50"></div></div>
+              <label for="oAddr">Delivery address or landmark</label><input id="oAddr" maxlength="160" placeholder="House number, street, nearest landmark"></div>
+            <label for="oNotes">Notes <span style="font-weight:600;color:var(--muted)">(optional)</span></label><input id="oNotes" maxlength="160">
+            <div class="sumbox" id="oSum"></div>
+            <p class="err" id="oErr"></p>
+            <button class="btn accent block big" id="oBtn">Place order</button>
+          </form>
+        </div>
+        <div class="card"><h2>My orders</h2><p class="sub">Follow each order and upload your proof of payment here.</p><div id="ordList"></div></div>
       </div>
 
       <div class="pane hide" id="pane-stats">

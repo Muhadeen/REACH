@@ -42,12 +42,14 @@ function msg(t,s){$("#page").innerHTML=`<div class="card" style="text-align:cent
       ${d.title?`<div class="role">${esc(d.title)}</div>`:""}
       ${d.company?`<div class="co">${clogo?`<span class="lg"><img src="${clogo}" alt=""></span>`:""}<span>${esc(d.company)}</span></div>`:(clogo?`<div class="co"><span class="lg"><img src="${clogo}" alt=""></span></div>`:"")}
       ${d.bio?`<p>${esc(d.bio)}</p>`:""}</div>
+     ${d.about?`<div class="aboutbox"><h3>About ${esc(String(d.name||"").split(" ")[0])}</h3><p id="abt" class="${d.about.length>320?"clamp":""}">${esc(d.about)}</p>${d.about.length>320?'<button class="btn ghost sm" id="abtBtn" type="button">Read more</button>':""}</div>`:""}
      <div class="list">${lines.length?lines.map((l,i)=>{const inner=`${l.icon?`<span class="logo" style="--s:48px">${l.icon}</span>`:logo(l.logoName||l.name,48,l.value)}<div class="t"><b>${esc(l.name)}</b><span class="v">${esc(l.value)}</span></div>`;
        return l.href?`<a class="item" data-p="${esc(l.kind)}" href="${esc(l.href)}" target="_blank" rel="noopener">${inner}<span class="go">Open ↗</span></a>`
         :`<button class="item cp-btn" data-p="${esc(l.kind)}" data-c="${esc(l.value)}">${inner}<span class="go">Copy</span></button>`}).join(""):'<div class="empty">No contact details added yet.</div>'}</div>
      <button class="btn block" id="vc" style="margin-top:6px">➕ Save to my contacts</button>
      <p class="cta">Want your own card? <a href="./">Make one free</a></p>
      <a class="mini" href="./"><img src="logo-mark.png" alt="">REACH</a>`;
+    if($("#abtBtn"))$("#abtBtn").onclick=()=>{const p=$("#abt"),c=p.classList.toggle("clamp");$("#abtBtn").textContent=c?"Read more":"Show less"};
     $$(".item").forEach(el=>el.addEventListener("click",async()=>{track(el.dataset.p);if(el.classList.contains("cp-btn")){try{await navigator.clipboard.writeText(el.dataset.c);toast("Copied ✓")}catch(e){toast(el.dataset.c)}}}));
     $("#vc").onclick=()=>{
       const tel=[],em=[],other=[];

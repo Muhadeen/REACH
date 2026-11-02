@@ -104,8 +104,8 @@ async function saveCard(patch,msg,o){const c=C();Object.assign(c,patch);
 
 /* tabs */
 $("#tabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;setTab(b.dataset.t)};
-function setTab(t){tab=t;$$("#tabs button").forEach(x=>x.classList.toggle("on",x.dataset.t===t));["links","details","print","stats"].forEach(k=>$("#pane-"+k).classList.toggle("hide",k!==t));
-  if(t==="print")renderPrint();if(t==="stats")renderStats()}
+function setTab(t){tab=t;$$("#tabs button").forEach(x=>x.classList.toggle("on",x.dataset.t===t));["links","details","print","orders","stats"].forEach(k=>$("#pane-"+k).classList.toggle("hide",k!==t));
+  if(t==="print")renderPrint();if(t==="orders")renderOrders();if(t==="stats")renderStats()}
 
 /* ---------- platforms ---------- */
 $("#quick").onclick=e=>{const b=e.target.closest(".q");if(!b)return;$("#pName").value=displayName(b.dataset.n);$("#pName").oninput();$("#pDet").focus()};
@@ -127,7 +127,7 @@ $("#list").onclick=async e=>{const b=e.target.closest("[data-act]");if(!b)return
 
 /* ---------- details / photo / logo ---------- */
 function renderDetails(){const c=C();
-  $("#dLabel").value=c.label||"";$("#dType").value=c.type||"personal";$("#dName").value=c.name||"";$("#dTitle").value=c.title||"";$("#dBio").value=c.bio||"";
+  $("#dLabel").value=c.label||"";$("#dType").value=c.type||"personal";$("#dName").value=c.name||"";$("#dTitle").value=c.title||"";$("#dBio").value=c.bio||"";$("#dAbout").value=c.about||"";$("#aboutCount").textContent=($("#dAbout").value.length)+" / 800";
   $("#dCompany").value=c.company||"";$("#dAddress").value=c.address||"";$("#dWeb").value=c.website||"";$("#dPhone").value=c.officePhone||"";$("#dWa").value=c.businessWhatsApp||"";
   $("#bizBox").classList.toggle("hide",($("#dType").value)==="personal");
   renderDetailImages()}
@@ -137,7 +137,7 @@ function renderDetailImages(){const c=C();
   $("#delCard").classList.toggle("hide",cards.length<2)}
 $("#dType").onchange=()=>$("#bizBox").classList.toggle("hide",$("#dType").value==="personal");
 $("#saveDet").onclick=()=>{const name=$("#dName").value.trim();if(!name)return toast("Name on card can't be empty");
-  saveCard({label:$("#dLabel").value.trim()||"Card",type:$("#dType").value,name,title:$("#dTitle").value.trim(),bio:$("#dBio").value.trim(),
+  saveCard({label:$("#dLabel").value.trim()||"Card",type:$("#dType").value,name,title:$("#dTitle").value.trim(),bio:$("#dBio").value.trim(),about:$("#dAbout").value.trim(),
     company:$("#dCompany").value.trim(),address:$("#dAddress").value.trim(),website:$("#dWeb").value.trim(),officePhone:$("#dPhone").value.trim(),businessWhatsApp:$("#dWa").value.trim()},"Details saved ✓")};
 async function pickImage(input,opts,field){const f=input.files[0];input.value="";if(!f)return;
   try{const d=await imgToDataUrl(f,opts);if(d.length>420000)return toast("That image is too large. Try a smaller one.");await saveCard({[field]:d},"Saved ✓",{keepForm:true})}
@@ -227,3 +227,93 @@ $("#delAcc").onclick=async()=>{
     for(const c of cards)await db.collection("cards").doc(c.id).delete();
     await db.collection("users").doc(user.uid).delete();await db.collection("private").doc(user.uid).delete();await user.delete();toast("Account deleted");
   }catch(e){toast(e.code==="auth/invalid-credential"||e.code==="auth/wrong-password"?"Wrong password. Nothing was deleted.":"Couldn't delete. Try again.")}};
+
+$("#dAbout").addEventListener("input",()=>$("#aboutCount").textContent=$("#dAbout").value.length+" / 800");
+
+/* ---------- printed card orders ---------- */
+let settings=null,orders=[],oQty=0,oMethod="delivery",proofs={};
+async function loadOrders(){const s=await db.collection("orders").where("owner","==",user.uid).get();
+  orders=s.docs.map(d=>({id:d.id,...d.data(),createdAt:ms(d.data().createdAt)})).sort((a,b)=>b.createdAt-a.createdAt)}
+async function renderOrders(force){
+  try{if(!settings||force)settings=await getSettings(db);await loadOrders()}
+  catch(e){console.error(e);$("#ordList").innerHTML='<div class="empty">Couldn\'t load orders. The database rules may need updating.</div>';return}
+  const open=settings.ordersOpen!==false;$("#ordPaused").classList.toggle("hide",open);$("#ordForm").classList.toggle("hide",!open);
+  const sel=$("#oCard"),keep=sel.value;sel.innerHTML=cards.map(c=>`<option value="${c.id}">${esc(c.label||c.name)} · ${esc(c.name)}</option>`).join("");sel.value=cards.some(c=>c.id===keep)?keep:C().id;
+  if(!$("#oName").value)$("#oName").value=C().name||"";
+  const tiers=[...(settings.tiers||[])].sort((a,b)=>a.qty-b.qty);
+  $("#oQty").innerHTML=tiers.map(t=>`<button type="button" class="cp ${+oQty===+t.qty?"on":""}" data-q="${t.qty}">${t.qty} cards · ${money(t.price,settings.currency)}</button>`).join("");
+  $("#oPickNote").textContent=settings.pickupNote||"";
+  applyMethod();renderOrderSummary();drawOrderPreview();renderOrderList()}
+async function drawOrderPreview(){const card=cards.find(c=>c.id===$("#oCard").value)||C();try{const cv=await drawFront(card),p=$("#oPrev").getContext("2d");p.clearRect(0,0,1050,600);p.drawImage(cv,0,0)}catch(e){}}
+$("#oCard").onchange=drawOrderPreview;
+function applyMethod(){$$("#oMethod button").forEach(b=>b.classList.toggle("on",b.dataset.m===oMethod));$("#oLoc").classList.toggle("hide",oMethod==="pickup");$("#oPickNote").classList.toggle("hide",oMethod!=="pickup"||!settings.pickupNote)}
+$("#oMethod").onclick=e=>{const b=e.target.closest("button");if(!b)return;oMethod=b.dataset.m;applyMethod();renderOrderSummary()};
+$("#oQty").onclick=e=>{const b=e.target.closest("button");if(!b)return;oQty=+b.dataset.q;$("#oQtyIn").value="";$$("#oQty .cp").forEach(x=>x.classList.toggle("on",x===b));renderOrderSummary()};
+$("#oQtyIn").oninput=()=>{oQty=parseInt($("#oQtyIn").value,10)||0;$$("#oQty .cp").forEach(x=>x.classList.toggle("on",+x.dataset.q===oQty));renderOrderSummary()};
+function renderOrderSummary(){const q=+oQty,cur=settings.currency,box=$("#oSum");
+  if(!q){box.innerHTML="Choose how many cards you would like.";return}
+  const pr=priceFor(settings,q,oMethod);
+  if(!pr){box.innerHTML=`<div class="row2"><span>${q} cards</span><span>Price to be confirmed</span></div><p class="hint" style="margin:6px 0 0">We will set your total after you place the order, and you will see it here.</p>`;return}
+  box.innerHTML=`<div class="row2"><span>${q} cards</span><span>${money(pr.cards,cur)}</span></div>`+(oMethod==="delivery"?`<div class="row2"><span>Delivery</span><span>${pr.fee?money(pr.fee,cur):"Free"}</span></div>`:"")+`<div class="row2 tot"><span>Total</span><span>${money(pr.total,cur)}</span></div>`}
+
+$("#ordForm").onsubmit=async e=>{e.preventDefault();const err=$("#oErr");err.textContent="";
+  const q=parseInt(oQty,10),name=$("#oName").value.trim(),phone=$("#oPhone").value.trim();
+  if(!(q>=1&&q<=100000))return err.textContent="Choose or type how many cards you want.";
+  if(!name)return err.textContent="Please enter your full name.";
+  if(phone.replace(/[^\d]/g,"").length<9)return err.textContent="Please enter a phone number we can reach.";
+  let loc={region:"",city:"",address:""};
+  if(oMethod==="delivery"){loc={region:$("#oRegion").value.trim(),city:$("#oCity").value.trim(),address:$("#oAddr").value.trim()};if(!loc.region||!loc.city||!loc.address)return err.textContent="Please fill in your delivery region, city and address."}
+  const card=cards.find(c=>c.id===$("#oCard").value)||C(),pr=priceFor(settings,q,oMethod);$("#oBtn").disabled=true;
+  try{
+    const ref=orderRef(),doc=db.collection("orders").doc();
+    await doc.set({owner:user.uid,cardId:card.id,cardName:card.name,label:card.label||"",qty:q,method:oMethod,customer:{name,phone,email:user.email||""},location:loc,notes:$("#oNotes").value.trim(),
+      amount:pr?pr.total:null,currency:settings.currency||"GHS",deliveryFee:pr?pr.fee:0,status:pr?"awaiting_payment":"awaiting_price",ref,createdAt:ts(),updatedAt:ts()});
+    try{const f=await drawFront(card),b=await drawBack(card,cardUrl(card.id,"qr"));let fr=f.toDataURL("image/jpeg",.92),bk=b.toDataURL("image/jpeg",.92);
+      if(dataUrlKB(fr)+dataUrlKB(bk)>600){fr=f.toDataURL("image/jpeg",.8);bk=b.toDataURL("image/jpeg",.8)}
+      await db.collection("orderFiles").doc(doc.id).set({owner:user.uid,front:fr,back:bk})}catch(x){console.error("print files",x)}
+    toast("Order placed ✓ Now pay and upload your receipt");oQty=0;$("#oQtyIn").value="";$("#oNotes").value="";
+    await renderOrders();$("#ordList").scrollIntoView({behavior:"smooth",block:"start"});
+  }catch(x){console.error(x);err.textContent="Couldn't place your order. Please try again."}
+  $("#oBtn").disabled=false};
+
+function acctRows(){const b=settings.bank||{},rows=[];
+  if(b.accountNumber)rows.push(`<div class="acct"><div><small>Bank transfer</small><b>${esc(b.bankName||"Bank")}${b.branch?" · "+esc(b.branch):""}</b><br><b>${esc(b.accountNumber)}</b>${b.accountName?"<br><small>"+esc(b.accountName)+"</small>":""}</div><button class="btn ghost sm" data-copy="${esc(b.accountNumber)}" type="button">Copy</button></div>`);
+  (settings.momo||[]).filter(m=>m.number).forEach(m=>rows.push(`<div class="acct"><div><small>Mobile money · ${esc(m.network||"")}</small><b>${esc(m.number)}</b>${m.name?"<br><small>"+esc(m.name)+"</small>":""}</div><button class="btn ghost sm" data-copy="${esc(m.number)}" type="button">Copy</button></div>`));
+  return rows.join("")||'<p class="hint">Payment details will appear here.</p>'}
+function payBox(o){return `<div class="paybox"><h3>Pay ${money(o.amount,o.currency)}</h3>
+  <p class="hint" style="margin:0">Use this reference as the payment note: <b>${esc(o.ref)}</b> <button class="btn ghost sm" data-copy="${esc(o.ref)}" type="button">Copy</button></p>
+  ${acctRows()}${settings.instructions?`<p class="hint" style="margin-top:10px">${esc(settings.instructions)}</p>`:""}
+  <h3 style="margin-top:14px">Then upload your proof of payment</h3>
+  <label style="margin-top:6px">Screenshot of your receipt</label><input type="file" class="pfile" accept="image/*"><div class="pprev"></div>
+  <label>Transaction ID <span style="font-weight:600;color:var(--muted)">(from your confirmation message)</span></label><input class="ptxn" maxlength="40">
+  <label>Name on the account or wallet you paid from</label><input class="ppayer" maxlength="60">
+  <label>Note <span style="font-weight:600;color:var(--muted)">(optional)</span></label><input class="pnote" maxlength="120">
+  <button class="btn accent block" data-act="submit" type="button" style="margin-top:12px">Submit proof of payment</button></div>`}
+function orderHtml(o){const loc=o.method==="pickup"?"Pickup":[o.location&&o.location.address,o.location&&o.location.city,o.location&&o.location.region].filter(Boolean).join(", ");let body="";
+  if(o.status==="awaiting_price")body='<div class="note info">We are setting your total. It will appear here shortly, then you can pay.</div>';
+  else if(o.status==="awaiting_payment")body=payBox(o);
+  else if(o.status==="rejected")body=`<div class="note bad">Your payment was not approved${o.rejectReason?": "+esc(o.rejectReason):""}. Please check and upload your receipt again.</div>`+payBox(o);
+  else if(o.status==="payment_submitted")body='<div class="note info">We received your proof of payment and are checking it. The status will update here.</div>';
+  else if(o.status==="approved")body='<div class="note good">✅ Payment approved. Your cards will be printed soon.</div>';
+  else if(o.status==="printing")body='<div class="note good">🖨️ Your cards are being printed.</div>';
+  else if(o.status==="delivered")body='<div class="note good">📦 Done. Thank you for your order!</div>';
+  const cancel=["awaiting_price","awaiting_payment","rejected"].includes(o.status)?'<button class="btn ghost sm" data-act="cancel" type="button" style="margin-top:12px;color:#d6204a">Cancel this order</button>':"";
+  return `<div class="ord" data-id="${o.id}"><div class="oh"><b>${esc(o.ref)}</b>${stPill(o.status)}</div>
+    <div class="kv"><span>Card</span><b>${esc(o.cardName)}</b><span>Quantity</span><b>${o.qty}</b><span>Total</span><b>${o.amount!=null?money(o.amount,o.currency):"To be confirmed"}</b><span>${o.method==="pickup"?"Collect":"Deliver to"}</span><b>${esc(loc)}</b><span>Placed</span><b>${when(o.createdAt)}</b></div>${body}${cancel}</div>`}
+function renderOrderList(){$("#ordList").innerHTML=orders.length?orders.map(orderHtml).join(""):'<div class="empty">No orders yet. Your orders will appear here.</div>'}
+$("#ordList").addEventListener("change",async e=>{if(!e.target.classList.contains("pfile"))return;const box=e.target.closest(".ord"),f=e.target.files[0];if(!f)return;
+  try{const d=await imgToDataUrl(f,{max:1100,square:false,q:.72});if(dataUrlKB(d)>420)return toast("That image is too large. Try a smaller screenshot.");proofs[box.dataset.id]=d;$(".pprev",box).innerHTML=`<img class="thumb" src="${d}" alt="Receipt preview">`}
+  catch(x){toast("Couldn't read that image. Use a JPG or PNG.")}});
+$("#ordList").onclick=async e=>{const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.copy){try{await navigator.clipboard.writeText(b.dataset.copy)}catch(x){}return toast("Copied ✓")}
+  const box=b.closest(".ord");if(!box)return;const id=box.dataset.id,act=b.dataset.act;
+  if(act==="cancel"){if(!confirm("Cancel this order?"))return;try{await db.collection("orders").doc(id).update({status:"cancelled",updatedAt:ts()});await loadOrders();renderOrderList();toast("Order cancelled")}catch(x){toast("Couldn't cancel")}return}
+  if(act==="submit"){const txn=$(".ptxn",box).value.trim(),payer=$(".ppayer",box).value.trim();
+    if(!proofs[id])return toast("Please upload a screenshot of your payment");
+    if(txn.length<4)return toast("Enter the transaction ID from your payment message");
+    if(!payer)return toast("Enter the name on the account or wallet you paid from");
+    b.disabled=true;
+    try{await db.collection("orderFiles").doc(id).set({owner:user.uid,receipt:proofs[id]},{merge:true});
+      await db.collection("orders").doc(id).update({status:"payment_submitted",txnId:txn,payerName:payer,payNote:$(".pnote",box).value.trim(),submittedAt:ts(),updatedAt:ts()});
+      delete proofs[id];toast("Proof of payment sent ✓");await loadOrders();renderOrderList()}
+    catch(x){console.error(x);toast("Couldn't send. Please try again.");b.disabled=false}}};

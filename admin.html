@@ -27,6 +27,7 @@ summary .t{flex:1;min-width:0}summary b{display:block}summary span.m{color:var(-
 #login{max-width:400px;margin:8vh auto}
 .help{background:linear-gradient(135deg,#eef4ff,#fff0f7);border:1.5px solid var(--line);border-radius:18px;padding:14px 16px;font-weight:600;font-size:.9rem;color:var(--muted);margin-bottom:6px}
 .warn{background:#fff4e5;border:1.5px solid #ffcf8a;color:#7a4a00;border-radius:16px;padding:12px 16px;font-weight:700;margin-top:14px}.mc{margin:8px 0 10px}.mc canvas{display:block}
+.set .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;padding:8px}.set .row input{flex:1 1 120px;padding:10px 12px}.tick{display:flex;align-items:center;gap:10px;font-size:.95rem;cursor:pointer}.tick input{width:auto;accent-color:#2563ff}.ord .tools .btn{padding:9px 14px;font-size:.88rem}.ord .amt{flex:1}
 </style></head><body>
 <header class="top"><a class="brand" href="./"><img src="logo-mark.png" alt="">REACH ADMIN</a><button class="btn ghost hide" id="out">Log out</button></header>
 <div class="wrap">
@@ -42,7 +43,7 @@ summary .t{flex:1;min-width:0}summary b{display:block}summary span.m{color:var(-
 <div id="app" class="hide">
   <div class="stats"><div class="stat"><b id="sU">0</b><small>Users</small></div><div class="stat"><b id="sC">0</b><small>Cards</small></div><div class="stat"><b id="sV">0</b><small>Card views</small></div><div class="stat"><b id="sF">0</b><small>Feedback</small></div></div>
   <div id="warn" class="warn hide"></div>
-  <div class="tabs2" id="tabs"><button data-t="users" class="on">👥 Users</button><button data-t="stats">📊 Analytics</button><button data-t="fb">💬 Feedback</button><button data-t="msg">✉️ Messages <span id="mCnt"></span></button></div>
+  <div class="tabs2" id="tabs"><button data-t="users" class="on">👥 Users</button><button data-t="orders">🛒 Orders <span id="oCnt"></span></button><button data-t="stats">📊 Analytics</button><button data-t="fb">💬 Feedback</button><button data-t="msg">✉️ Messages <span id="mCnt"></span></button><button data-t="set">⚙️ Settings</button></div>
 
   <div id="p-users">
     <div class="help">Forgot-password help: open the user, check you're talking to the right person, then tap <b>Send reset email</b>. Firebase emails them a link to choose a new password.</div>
@@ -51,9 +52,28 @@ summary .t{flex:1;min-width:0}summary b{display:block}summary span.m{color:var(-
   </div>
   <div id="p-stats" class="hide"><div class="card" id="aBody"></div></div>
   <div id="p-fb" class="hide"><div id="fbList"></div></div>
+  <div id="p-orders" class="hide">
+    <div class="bar2"><select id="oFilter" style="flex:1 1 200px"><option value="action">Needs action</option><option value="all">All orders</option><option value="awaiting_price">Awaiting price</option><option value="awaiting_payment">Awaiting payment</option><option value="payment_submitted">Payment submitted</option><option value="approved">Approved</option><option value="printing">Printing</option><option value="delivered">Delivered</option><option value="rejected">Rejected</option><option value="cancelled">Cancelled</option></select><button class="btn ghost" id="oRef" type="button">Refresh</button></div>
+    <div id="ordAdmin"></div>
+  </div>
+  <div id="p-set" class="hide"><div class="card set">
+    <h2>Order &amp; payment settings</h2><p class="sub">Customers see these when they order printed cards. The prices below are examples. Change them any time.</p>
+    <div class="note info hide" id="setNote">You are seeing the starter details. Check them, then press <b>Save settings</b> to store them.</div>
+    <label class="tick"><input type="checkbox" id="sOpen"> Accept new orders</label>
+    <div class="two"><div><label for="sCur">Currency</label><input id="sCur" maxlength="5"></div><div><label for="sFee">Delivery fee</label><input id="sFee" type="number" min="0" step="0.01" placeholder="0 = free"></div></div>
+    <h3 class="ah">Bank account</h3>
+    <div class="two"><div><label for="sBank">Bank</label><input id="sBank"></div><div><label for="sBranch">Branch</label><input id="sBranch"></div></div>
+    <div class="two"><div><label for="sAcc">Account number</label><input id="sAcc"></div><div><label for="sAccName">Account name</label><input id="sAccName" placeholder="Name on the account"></div></div>
+    <h3 class="ah">Mobile money</h3><div id="momoRows"></div><button class="btn ghost sm" id="addMomo" type="button" style="margin-top:8px">＋ Add mobile money number</button>
+    <h3 class="ah">Price list (per pack)</h3><p class="hint" style="margin:0 0 6px">Customers pick one of these packs. A quantity not on the list gets a price from you after they order.</p><div id="tierRows"></div><button class="btn ghost sm" id="addTier" type="button" style="margin-top:8px">＋ Add a pack</button>
+    <label for="sPick">Pickup note <span style="font-weight:600;color:var(--muted)">(shown when someone chooses pickup)</span></label><input id="sPick">
+    <label for="sIns">Payment instructions</label><textarea id="sIns" rows="3"></textarea>
+    <div class="btnrow"><button class="btn accent" id="saveSet" type="button">Save settings</button></div>
+  </div></div>
   <div id="p-msg" class="hide"><p class="sub" style="margin-top:6px">Messages sent from the Contact page.</p><div id="msgList"></div></div>
 </div>
 </div>
+<div class="modal hide" id="mImg"><div class="mbox wide"><h2 id="miTitle">Receipt</h2><div id="miBody"></div><div class="mact"><button class="btn ghost" id="miClose" type="button">Close</button></div></div></div>
 <div class="modal hide" id="mCard"><div class="mbox wide"><h2 id="mcTitle">Card</h2><p class="sub" id="mcSub"></p><div id="mcBody"></div><div class="mact"><button class="btn ghost" id="mcClose" type="button">Close</button></div></div></div>
 <script src="core.js"></script>
 <script src="cardgen.js"></script>
@@ -78,11 +98,11 @@ $("#fg").onclick=async()=>{const em=$("#em").value.trim().toLowerCase(),e=$("#er
   e.className="err ok";e.textContent="If that email has an account, a reset link is on its way. Check spam too."};
 $("#out").onclick=()=>auth.signOut();$("#rf").onclick=async()=>{await load(true);toast("Refreshed")};
 
-let failed=[],msgsAll=[];
+let failed=[],msgsAll=[],ordersAll=[],SET=null,SETSTORED=false;
 async function load(){
   const q=(n,lim)=>{let c=db.collection(n);if(lim)c=c.limit(lim);return c.get()};
-  const names=["users","private","cards","feedback","hits","messages"];
-  const rs=await Promise.allSettled([q("users"),q("private"),q("cards"),q("feedback"),q("hits"),q("messages")]);
+  const names=["users","private","cards","feedback","hits","messages","orders","settings"];
+  const rs=await Promise.allSettled([q("users"),q("private"),q("cards"),q("feedback"),q("hits"),q("messages"),q("orders"),db.collection("settings").doc("payment").get()]);
   failed=names.filter((n,i)=>rs[i].status!=="fulfilled");
   const why=names.map((n,i)=>rs[i].status!=="fulfilled"?n+" ("+((rs[i].reason&&rs[i].reason.code)||"error")+")":null).filter(Boolean);
   const g=i=>rs[i].status==="fulfilled"?rs[i].value.docs:[];
@@ -92,10 +112,12 @@ async function load(){
   fbAll=g(3).map(d=>({id:d.id,...d.data(),ts:ms(d.data().ts)})).sort((a,b)=>b.ts-a.ts);
   hitsAll=g(4).map(d=>{const v=d.data();return{...v,ts:ms(v.ts)||Date.now()}});loadedHits=true;
   msgsAll=g(5).map(d=>({id:d.id,...d.data(),ts:ms(d.data().ts)})).sort((a,b)=>b.ts-a.ts);
+  ordersAll=g(6).map(d=>({id:d.id,...d.data(),createdAt:ms(d.data().createdAt)})).sort((a,b)=>b.createdAt-a.createdAt);
+  const sv=rs[7].status==="fulfilled"?rs[7].value:null;SETSTORED=!!(sv&&sv.exists);SET=SETSTORED?{...DEFAULT_PAYMENT,...sv.data()}:{...DEFAULT_PAYMENT};
   $("#sV").textContent=hitsAll.filter(h=>h.type==="view").length;
   const w=$("#warn");w.classList.toggle("hide",!failed.length);
   if(failed.length)w.innerHTML="⚠️ Couldn't read: <b>"+why.join(", ")+"</b>. If it says permission-denied, publish the latest Firestore rules from the README. Then tap Refresh.";
-  render();renderFb();renderMsgs()}
+  render();renderFb();renderMsgs();renderOrders();renderSettings()}
 
 function render(){
   const q=norm($("#q").value||"");
@@ -130,7 +152,7 @@ $("#users").onclick=async e=>{const b=e.target.closest("[data-act]");if(!b)retur
 
 /* tabs */
 $("#tabs").onclick=async e=>{const b=e.target.closest("button");if(!b)return;const t=b.dataset.t;
-  $$("#tabs button").forEach(x=>x.classList.toggle("on",x===b));["users","stats","fb","msg"].forEach(k=>$("#p-"+k).classList.toggle("hide",k!==t));
+  $$("#tabs button").forEach(x=>x.classList.toggle("on",x===b));["users","orders","stats","fb","msg","set"].forEach(k=>$("#p-"+k).classList.toggle("hide",k!==t));
   if(t==="stats")await renderStats()};
 async function renderStats(){
   if(failed.includes("hits")){$("#aBody").innerHTML='<div class="empty">Analytics couldn\'t be loaded. See the orange message above for the reason, then tap Refresh on the Users tab.</div>';return}
@@ -171,6 +193,73 @@ $("#mcBody").onclick=async e=>{const m=window.__mc;if(!m)return;
   downloadCanvas(m[k],k==="qr"?nm+"-QR-REACH.png":k==="fr"?nm+"-Business-Card-Front.png":nm+"-Business-Card-Back.png")};
 $("#mcClose").onclick=()=>$("#mCard").classList.add("hide");$("#mCard").addEventListener("click",e=>{if(e.target.id==="mCard")$("#mCard").classList.add("hide")});
 
+/* ---------- orders ---------- */
+const needsAction=o=>["awaiting_price","payment_submitted"].includes(o.status);
+const expected=o=>{const p=priceFor(SET||{},o.qty,o.method);return p?p.total:null};
+function orderMsg(o){const n=(o.customer&&o.customer.name||"").split(" ")[0]||"there",r=o.ref;
+  return ({awaiting_price:`Hi ${n}, we've set the total for your REACH order ${r}. Open the Orders tab to pay.`,awaiting_payment:`Hi ${n}, your REACH order ${r} is waiting for payment. Open the Orders tab to pay and upload your receipt.`,
+    payment_submitted:`Hi ${n}, we are checking your payment for order ${r}.`,approved:`Hi ${n}, your payment for REACH order ${r} is confirmed. Your cards will be printed soon. Thank you!`,
+    printing:`Hi ${n}, your REACH cards (order ${r}) are being printed.`,delivered:`Hi ${n}, your REACH order ${r} is ready or delivered. Thank you!`,rejected:`Hi ${n}, we couldn't confirm your payment for order ${r}. Please check the Orders tab.`})[o.status]||`Hi ${n}, about your REACH order ${r}.`}
+function adminOrder(o){const cur=o.currency||"GHS",c=o.customer||{},l=o.location||{},exp=expected(o);
+  const loc=o.method==="pickup"?"Pickup":[l.address,l.city,l.region].filter(Boolean).join(", ");
+  const warn=(exp!=null&&o.amount!=null&&+o.amount!==+exp)?`<div class="note bad">The amount ${money(o.amount,cur)} is different from your current price list (${money(exp,cur)}). Check before approving.</div>`:"";
+  const canAmt=["awaiting_price","awaiting_payment","rejected"].includes(o.status),st=o.status,btn=(a,t,x="")=>`<button class="btn ${x}" data-act="${a}" type="button">${t}</button>`;
+  let acts="";
+  if(st==="payment_submitted")acts+=btn("receipt","🧾 View receipt")+btn("approve","✅ Approve","accent")+btn("reject","❌ Reject","ghost");
+  if(st==="approved")acts+=btn("printing","🖨 Mark printing");
+  if(st==="printing")acts+=btn("delivered","📦 Mark delivered");
+  if(["approved","printing","delivered"].includes(st))acts+=btn("receipt","🧾 Receipt","ghost");
+  acts+=btn("front","⬇ Front","ghost")+btn("back","⬇ Back","ghost");
+  if(c.phone)acts+=`<a class="btn ghost" target="_blank" rel="noopener" href="${esc(waLink(c.phone,orderMsg(o)))}">WhatsApp</a>`;
+  if(!["delivered","cancelled"].includes(st))acts+=btn("cancel","Cancel order","ghost");
+  return `<div class="ord" data-id="${o.id}"><div class="oh"><b>${esc(o.ref)}</b>${stPill(st)}</div>
+    <div class="kv"><span>Customer</span><b>${esc(c.name||"")}</b><span>Phone</span><b>${esc(c.phone||"")}</b><span>Email</span><b>${esc(c.email||"")}</b><span>Card</span><b>${esc(o.cardName||"")}${o.label?" ("+esc(o.label)+")":""}</b><span>Quantity</span><b>${o.qty}</b>
+    <span>${o.method==="pickup"?"Pickup":"Deliver to"}</span><b>${esc(loc)}</b>${o.notes?`<span>Notes</span><b>${esc(o.notes)}</b>`:""}<span>Amount</span><b>${o.amount!=null?money(o.amount,cur):"Not set"}</b>
+    ${o.txnId?`<span>Transaction ID</span><b>${esc(o.txnId)}</b><span>Paid from</span><b>${esc(o.payerName||"")}</b>${o.payNote?`<span>Customer note</span><b>${esc(o.payNote)}</b>`:""}`:""}${o.rejectReason?`<span>Reject reason</span><b>${esc(o.rejectReason)}</b>`:""}<span>Placed</span><b>${when(o.createdAt)}</b></div>
+    ${warn}${canAmt?`<div class="copy" style="margin-top:10px"><input class="amt" type="number" min="0" step="0.01" placeholder="Amount (${cur})" value="${o.amount??""}"><button class="btn ghost" data-act="amount" type="button">Set amount</button></div>`:""}
+    ${st==="payment_submitted"?`<p class="hint">Before approving, open your bank or mobile money app and confirm ${o.amount!=null?money(o.amount,cur):"the amount"} arrived with reference ${esc(o.ref)} or transaction ID ${esc(o.txnId||"")}. A screenshot alone is not proof.</p>`:""}
+    <div class="tools">${acts}</div></div>`}
+function renderOrders(){const f=$("#oFilter").value,need=ordersAll.filter(needsAction).length;$("#oCnt").textContent=need?"("+need+")":"";
+  const list=ordersAll.filter(o=>f==="action"?needsAction(o):f==="all"?true:o.status===f);
+  $("#ordAdmin").innerHTML=list.length?list.map(adminOrder).join(""):'<div class="empty">No orders here.</div>'}
+$("#oFilter").onchange=renderOrders;$("#oRef").onclick=async()=>{await load();toast("Refreshed")};
+async function filesOf(id){const s=await db.collection("orderFiles").doc(id).get();return s.exists?s.data():{}}
+function dlUrl(url,name){const a=document.createElement("a");a.href=url;a.download=name;a.click()}
+async function upd(o,patch,msg){try{await db.collection("orders").doc(o.id).update({...patch,updatedAt:ts()});Object.assign(o,patch);renderOrders();toast(msg||"Saved ✓")}catch(x){console.error(x);toast("Couldn't save")}}
+$("#ordAdmin").onclick=async e=>{const b=e.target.closest("button[data-act]");if(!b)return;const box=b.closest(".ord"),o=ordersAll.find(x=>x.id===box.dataset.id),act=b.dataset.act,cur=o.currency||"GHS";
+  if(act==="amount"){const v=parseFloat($(".amt",box).value);if(!(v>=0))return toast("Enter a valid amount");return upd(o,{amount:v,status:o.status==="awaiting_price"?"awaiting_payment":o.status},"Amount set ✓")}
+  if(act==="receipt"){$("#miTitle").textContent="Receipt · "+o.ref;$("#miBody").innerHTML='<div class="spin" style="margin:30px auto"></div>';$("#mImg").classList.remove("hide");
+    const f=await filesOf(o.id).catch(()=>({}));$("#miBody").innerHTML=(safeImg(f.receipt)?`<img src="${f.receipt}" alt="Receipt" style="width:100%;border-radius:14px;border:1.5px solid var(--line)">`:'<div class="empty">No receipt image stored.</div>')+
+      `<div class="kv"><span>Amount due</span><b>${o.amount!=null?money(o.amount,cur):"-"}</b><span>Transaction ID</span><b>${esc(o.txnId||"-")}</b><span>Paid from</span><b>${esc(o.payerName||"-")}</b><span>Reference</span><b>${esc(o.ref)}</b></div>`+
+      (safeImg(f.receipt)?'<button class="btn ghost sm" id="miDel" type="button" style="color:#d6204a">Delete receipt image</button>':"");
+    const d=$("#miDel");if(d)d.onclick=async()=>{if(!confirm("Delete the receipt image? You keep the order and transaction ID."))return;try{await db.collection("orderFiles").doc(o.id).update({receipt:""});$("#miBody").innerHTML='<div class="empty">Receipt image deleted.</div>'}catch(x){toast("Failed")}};return}
+  if(act==="approve"){if(!confirm("Approve this payment?\n\nOnly continue if "+(o.amount!=null?money(o.amount,cur):"the amount")+" has arrived in your bank or mobile money account (reference "+o.ref+")."))return;return upd(o,{status:"approved",approvedAt:ts()},"Approved ✓")}
+  if(act==="reject"){const r=prompt("Why is the payment being rejected? The customer will see this.");if(r===null)return;return upd(o,{status:"rejected",rejectReason:r.trim()},"Rejected")}
+  if(act==="printing")return upd(o,{status:"printing"},"Marked as printing");
+  if(act==="delivered")return upd(o,{status:"delivered",deliveredAt:ts()},"Marked as delivered");
+  if(act==="cancel"){if(!confirm("Cancel order "+o.ref+"?"))return;return upd(o,{status:"cancelled"},"Order cancelled")}
+  if(act==="front"||act==="back"){const nm=o.ref+"-"+safeName(o.cardName)+"-"+act;let f={};try{f=await filesOf(o.id)}catch(x){}
+    if(f[act])return dlUrl(f[act],nm+".jpg");
+    const card=cardsAll.find(c=>c.id===o.cardId);if(!card)return toast("The card was deleted and no saved files exist");
+    toast("Saved files not found. Building from the current card…");if(!window.QRCode)await loadJs(QR_URL);
+    downloadCanvas(act==="front"?await drawFront(card):await drawBack(card,cardUrl(card.id,"qr")),nm+".png")}};
+$("#miClose").onclick=()=>$("#mImg").classList.add("hide");$("#mImg").addEventListener("click",e=>{if(e.target.id==="mImg")$("#mImg").classList.add("hide")});
+
+/* ---------- settings ---------- */
+function drawMomo(a){$("#momoRows").innerHTML=a.map((m,i)=>`<div class="row"><input class="mm-n" placeholder="Network, e.g. Telecel Cash" value="${esc(m.network||"")}"><input class="mm-no" placeholder="Number" value="${esc(m.number||"")}"><input class="mm-nm" placeholder="Account name" value="${esc(m.name||"")}"><button class="ic danger" data-rm="momo" data-i="${i}" type="button" title="Remove">🗑</button></div>`).join("")}
+function drawTiers(a){$("#tierRows").innerHTML=a.map((t,i)=>`<div class="row"><input class="t-q" type="number" min="1" placeholder="Number of cards" value="${t.qty??""}"><input class="t-p" type="number" min="0" step="0.01" placeholder="Price" value="${t.price??""}"><button class="ic danger" data-rm="tier" data-i="${i}" type="button" title="Remove">🗑</button></div>`).join("")}
+const rawMomo=()=>$$("#momoRows .row").map(r=>({network:$(".mm-n",r).value.trim(),number:$(".mm-no",r).value.trim(),name:$(".mm-nm",r).value.trim()}));
+const rawTiers=()=>$$("#tierRows .row").map(r=>({qty:parseInt($(".t-q",r).value,10),price:parseFloat($(".t-p",r).value)}));
+function renderSettings(){const s=SET||DEFAULT_PAYMENT,b=s.bank||{};$("#setNote").classList.toggle("hide",SETSTORED);
+  $("#sOpen").checked=s.ordersOpen!==false;$("#sCur").value=s.currency||"GHS";$("#sFee").value=s.deliveryFee??"";$("#sBank").value=b.bankName||"";$("#sBranch").value=b.branch||"";$("#sAcc").value=b.accountNumber||"";$("#sAccName").value=b.accountName||"";
+  $("#sPick").value=s.pickupNote||"";$("#sIns").value=s.instructions||"";drawMomo(s.momo||[]);drawTiers(s.tiers||[])}
+$("#addMomo").onclick=()=>drawMomo([...rawMomo(),{}]);$("#addTier").onclick=()=>drawTiers([...rawTiers(),{}]);
+$("#p-set").addEventListener("click",e=>{const b=e.target.closest("[data-rm]");if(!b)return;const i=+b.dataset.i;if(b.dataset.rm==="momo"){const a=rawMomo();a.splice(i,1);drawMomo(a)}else{const a=rawTiers();a.splice(i,1);drawTiers(a)}});
+$("#saveSet").onclick=async()=>{const doc={ordersOpen:$("#sOpen").checked,currency:$("#sCur").value.trim()||"GHS",deliveryFee:parseFloat($("#sFee").value)||0,
+    bank:{bankName:$("#sBank").value.trim(),branch:$("#sBranch").value.trim(),accountNumber:$("#sAcc").value.trim(),accountName:$("#sAccName").value.trim()},
+    momo:rawMomo().filter(m=>m.number),tiers:rawTiers().filter(t=>t.qty>0&&t.price>=0).sort((a,b)=>a.qty-b.qty),pickupNote:$("#sPick").value.trim(),instructions:$("#sIns").value.trim()};
+  try{await db.collection("settings").doc("payment").set(doc);SET={...DEFAULT_PAYMENT,...doc};SETSTORED=true;renderSettings();renderOrders();toast("Settings saved ✓")}catch(x){console.error(x);toast("Couldn't save. Publish the latest Firestore rules.")}};
+
 /* ---------- Excel ---------- */
 $("#xl").onclick=async()=>{
   if(!U.length)return toast("No users to export yet");
@@ -182,7 +271,9 @@ $("#xl").onclick=async()=>{
   U.forEach(u=>r1.push([u.name,u.email,...keys.map(k=>vals(u.cards,k)),u.cards.length,u.createdAt?new Date(u.createdAt).toLocaleDateString("en-GB"):""]));
   const r2=[["Owner","Login (email)","Card","Type","Name on card","Job title","Company","Address","Website","Office phone","Business WhatsApp",...keys.map(k=>label[k]),"Card link","Created"]];
   U.forEach(u=>u.cards.forEach(c=>r2.push([u.name,u.email,c.label||"",c.type||"",c.name||"",c.title||"",c.company||"",c.address||"",c.website||"",c.officePhone||"",c.businessWhatsApp||"",...keys.map(k=>vals([c],k)),cardUrl(c.id),ms(c.createdAt)?new Date(ms(c.createdAt)).toLocaleDateString("en-GB"):""])));
+  const r3=[["Reference","Status","Customer","Phone","Email","Card","Quantity","Amount","Method","Region","City","Address","Transaction ID","Paid from","Placed"]];
+  ordersAll.forEach(o=>{const c=o.customer||{},l=o.location||{};r3.push([o.ref,(ORD_STATUS[o.status]||[o.status])[0],c.name||"",c.phone||"",c.email||"",o.cardName||"",o.qty,o.amount??"",o.method||"",l.region||"",l.city||"",l.address||"",o.txnId||"",o.payerName||"",o.createdAt?new Date(o.createdAt).toLocaleDateString("en-GB"):""])});
   const wb=XLSX.utils.book_new();
-  [["REACH users",r1],["All cards",r2]].forEach(([n,r])=>{const ws=XLSX.utils.aoa_to_sheet(r);ws["!cols"]=r[0].map((_,c)=>({wch:Math.min(40,Math.max(12,...r.map(x=>String(x[c]??"").length+2)))}));XLSX.utils.book_append_sheet(wb,ws,n)});
+  [["REACH users",r1],["All cards",r2],["Orders",r3]].forEach(([n,r])=>{const ws=XLSX.utils.aoa_to_sheet(r);ws["!cols"]=r[0].map((_,c)=>({wch:Math.min(40,Math.max(12,...r.map(x=>String(x[c]??"").length+2)))}));XLSX.utils.book_append_sheet(wb,ws,n)});
   XLSX.writeFile(wb,"REACH-users-"+new Date().toISOString().slice(0,10)+".xlsx");toast("Excel downloaded ✓")};
 </script></body></html>

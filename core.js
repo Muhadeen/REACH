@@ -345,3 +345,20 @@ function buildNav(){const n=$("#nav");if(!n)return;const page=location.pathname.
 function buildFoot(){const f=$("#foot");if(!f)return;
   f.innerHTML=`<nav class="fnav"><a href="./">Home</a><a href="how-it-works.html">How it works</a><a href="about.html">About</a><a href="faq.html">FAQs</a><a href="contact.html">Contact</a></nav>`}
 document.addEventListener("DOMContentLoaded",()=>{buildNav();buildFoot()});
+
+/* ================= orders (printed cards) ================= */
+const ORD_STATUS={awaiting_price:["Awaiting price","amber"],awaiting_payment:["Awaiting payment","blue"],payment_submitted:["Payment submitted","pink"],approved:["Payment approved","green"],printing:["Printing","sky"],delivered:["Delivered","green"],rejected:["Payment rejected","red"],cancelled:["Cancelled","grey"]};
+const stPill=s=>{const [t,c]=ORD_STATUS[s]||[s,"grey"];return `<span class="st ${c}">${esc(t)}</span>`};
+const money=(n,cur)=>(cur||"GHS")+" "+Number(n).toLocaleString("en-GB",{maximumFractionDigits:2});
+function orderRef(){const a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";let r="RCH-";for(let i=0;i<6;i++)r+=a[Math.floor(Math.random()*a.length)];return r}
+/* Starter settings. Edit them any time in Admin > Settings; what you save there overrides these. The prices are only examples. */
+const DEFAULT_PAYMENT={ordersOpen:true,currency:"GHS",
+  bank:{bankName:"Zenith Bank",branch:"East Legon Branch",accountNumber:"9181303254",accountName:""},
+  momo:[{network:"Telecel Cash",number:"0509937611",name:"Muhadeen Mohammed"}],
+  tiers:[{qty:25,price:600},{qty:50,price:1150},{qty:100,price:2200}],
+  deliveryFee:30,pickupNote:"Pickup details will be shared once your payment is approved.",
+  instructions:"Pay the exact amount, then upload your receipt below. Add your order reference to the payment note if you can."};
+async function getSettings(db){try{const s=await db.collection("settings").doc("payment").get();return s.exists?{...DEFAULT_PAYMENT,...s.data()}:{...DEFAULT_PAYMENT}}catch(e){return{...DEFAULT_PAYMENT}}}
+function priceFor(set,qty,method){const t=(set.tiers||[]).find(x=>+x.qty===+qty);if(!t||!(+t.price>=0))return null;const fee=method==="delivery"?(+set.deliveryFee||0):0;return{cards:+t.price,fee,total:+t.price+fee}}
+const waLink=(num,text)=>"https://wa.me/"+String(num||"").replace(/[^\d]/g,"")+"?text="+encodeURIComponent(text||"");
+const dataUrlKB=s=>Math.round((s||"").length*0.75/1024);
