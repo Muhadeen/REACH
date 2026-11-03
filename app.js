@@ -44,7 +44,7 @@ async function onUser(u){
   if(signingUp)return;
   if(!u){user=null;cards=[];hits=null;show("auth");return}
   user=u;
-  try{await ensureUser(u,pendingName);await loadCards();renderAll();show("app")}
+  try{await ensureUser(u,pendingName);await loadCards();renderAll();show("app");refreshInbox(true)}
   catch(e){console.error(e);show("auth");$("#authErr").className="err";$("#authErr").textContent="Signed in, but your card couldn't load. The database rules may not be published yet."}
 }
 
@@ -88,7 +88,7 @@ function renderAll(o={}){
   $("#hiBio").textContent=cards.length>1?"Editing: "+(c.label||"Card"):(c.title||c.bio||"Add the ways people can reach you.");
   $("#cardbar").innerHTML=cards.map(k=>`<button class="cp ${k.id===c.id?"on":""}" data-id="${k.id}">${TYPE_ICON[k.type]||"🙂"} ${esc(k.label||"Card")}</button>`).join("")+'<button class="cp add" id="newCardBtn">＋ New card</button>';
   renderList();o.keepForm?renderDetailImages():renderDetails();renderShare();
-  if(tab==="print")renderPrint();if(tab==="stats")renderStats();
+  if(tab==="print")renderPrint();if(tab==="stats")renderStats();if(tab==="offer")renderOffer();
 }
 $("#cardbar").onclick=e=>{const b=e.target.closest("button");if(!b)return;if(b.id==="newCardBtn")return openNew();cur=b.dataset.id;editing=null;renderAll()};
 
@@ -104,8 +104,8 @@ async function saveCard(patch,msg,o){const c=C();Object.assign(c,patch);
 
 /* tabs */
 $("#tabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;setTab(b.dataset.t)};
-function setTab(t){tab=t;$$("#tabs button").forEach(x=>x.classList.toggle("on",x.dataset.t===t));["links","details","print","orders","stats"].forEach(k=>$("#pane-"+k).classList.toggle("hide",k!==t));
-  if(t==="print")renderPrint();if(t==="orders")renderOrders();if(t==="stats")renderStats()}
+function setTab(t){tab=t;$$("#tabs button").forEach(x=>x.classList.toggle("on",x.dataset.t===t));["links","details","offer","print","orders","inbox","stats"].forEach(k=>$("#pane-"+k).classList.toggle("hide",k!==t));
+  if(t==="print")renderPrint();if(t==="orders")renderOrders();if(t==="stats")renderStats();if(t==="offer")renderOffer();if(t==="inbox")refreshInbox()}
 
 /* ---------- platforms ---------- */
 $("#quick").onclick=e=>{const b=e.target.closest(".q");if(!b)return;$("#pName").value=displayName(b.dataset.n);$("#pName").oninput();$("#pDet").focus()};
@@ -191,8 +191,13 @@ $("#frontList").onchange=e=>{const k=e.target.dataset.k;if(!k)return;const c=C()
 $("#fAll").onclick=()=>saveCard({frontPick:contactLines(C()).slice(0,8).map(l=>l.key)},"Front updated ✓");
 $("#fNone").onclick=()=>saveCard({frontPick:[]},"Front cleared");
 $("#sides").onclick=e=>{const b=e.target.closest("button");if(!b)return;side=b.dataset.s;$$("#sides button").forEach(x=>x.classList.toggle("on",x===b));renderPrint()};
-async function cardCanvas(s){const c=C();return s==="front"?drawFront(c):drawBack(c,cardUrl(c.id,"qr"))}
-async function renderPrint(){renderPrintControls();const t=++prTok;try{const cv=await cardCanvas(side);if(t!==prTok)return;const p=$("#bcPrev");p.getContext("2d").clearRect(0,0,1050,600);p.getContext("2d").drawImage(cv,0,0)}catch(e){console.error(e)}}
+let ordersAt=0;
+async function freshOrders(){if(Date.now()-ordersAt>15000){try{await loadOrders();ordersAt=Date.now()}catch(e){}}}
+const isPaidCard=c=>orders.some(o=>o.kind!=="plan"&&o.cardId===c.id&&["approved","printing","delivered"].includes(o.status));
+async function cardCanvas(s){const c=C();await freshOrders();const wm=!isPaidCard(c);return s==="front"?drawFront(c,{watermark:wm}):drawBack(c,cardUrl(c.id,"qr"),{watermark:wm})}
+function wmNote(){const c=C();$("#wmNote").className="note "+(isPaidCard(c)?"good":"info");$("#wmNote").innerHTML=isPaidCard(c)?"✅ Watermark removed. Your printed card order for this card was approved, so your downloads are clean.":"🔒 Downloads carry a REACH watermark until your printed card order is paid and approved. <a href=\"#\" id=\"wmGo\" style=\"font-weight:800;color:inherit;text-decoration:underline\">Order printed cards</a>"}
+async function renderPrint(){renderPrintControls();const t=++prTok;try{const cv=await cardCanvas(side);if(t!==prTok)return;wmNote();const p=$("#bcPrev");p.getContext("2d").clearRect(0,0,1050,600);p.getContext("2d").drawImage(cv,0,0)}catch(e){console.error(e)}}
+$("#wmNote").addEventListener("click",e=>{if(e.target.id==="wmGo"){e.preventDefault();setTab("orders")}});
 $("#dlFront").onclick=async()=>{try{downloadCanvas(await cardCanvas("front"),safeName(C().name)+"-Business-Card-Front.png")}catch(e){toast("Couldn't create the card")}};
 $("#dlBack").onclick=async()=>{try{downloadCanvas(await cardCanvas("back"),safeName(C().name)+"-Business-Card-Back.png")}catch(e){toast("Couldn't create the card")}};
 
@@ -244,7 +249,7 @@ async function renderOrders(force){
   $("#oQty").innerHTML=tiers.map(t=>`<button type="button" class="cp ${+oQty===+t.qty?"on":""}" data-q="${t.qty}">${t.qty} cards · ${money(t.price,settings.currency)}</button>`).join("");
   $("#oPickNote").textContent=settings.pickupNote||"";
   applyMethod();renderOrderSummary();drawOrderPreview();renderOrderList()}
-async function drawOrderPreview(){const card=cards.find(c=>c.id===$("#oCard").value)||C();try{const cv=await drawFront(card),p=$("#oPrev").getContext("2d");p.clearRect(0,0,1050,600);p.drawImage(cv,0,0)}catch(e){}}
+async function drawOrderPreview(){const card=cards.find(c=>c.id===$("#oCard").value)||C();try{const cv=await drawFront(card,{watermark:true}),p=$("#oPrev").getContext("2d");p.clearRect(0,0,1050,600);p.drawImage(cv,0,0)}catch(e){}}
 $("#oCard").onchange=drawOrderPreview;
 function applyMethod(){$$("#oMethod button").forEach(b=>b.classList.toggle("on",b.dataset.m===oMethod));$("#oLoc").classList.toggle("hide",oMethod==="pickup");$("#oPickNote").classList.toggle("hide",oMethod!=="pickup"||!settings.pickupNote)}
 $("#oMethod").onclick=e=>{const b=e.target.closest("button");if(!b)return;oMethod=b.dataset.m;applyMethod();renderOrderSummary()};
@@ -270,7 +275,7 @@ $("#ordForm").onsubmit=async e=>{e.preventDefault();const err=$("#oErr");err.tex
       amount:pr?pr.total:null,currency:settings.currency||"GHS",deliveryFee:pr?pr.fee:0,status:pr?"awaiting_payment":"awaiting_price",ref,createdAt:ts(),updatedAt:ts()});
     try{const f=await drawFront(card),b=await drawBack(card,cardUrl(card.id,"qr"));let fr=f.toDataURL("image/jpeg",.92),bk=b.toDataURL("image/jpeg",.92);
       if(dataUrlKB(fr)+dataUrlKB(bk)>600){fr=f.toDataURL("image/jpeg",.8);bk=b.toDataURL("image/jpeg",.8)}
-      await db.collection("orderFiles").doc(doc.id).set({owner:user.uid,front:fr,back:bk})}catch(x){console.error("print files",x)}
+      await db.collection("printFiles").doc(doc.id).set({owner:user.uid,front:fr,back:bk})}catch(x){console.error("print files",x)}
     toast("Order placed ✓ Now pay and upload your receipt");oQty=0;$("#oQtyIn").value="";$("#oNotes").value="";
     await renderOrders();$("#ordList").scrollIntoView({behavior:"smooth",block:"start"});
   }catch(x){console.error(x);err.textContent="Couldn't place your order. Please try again."}
@@ -294,12 +299,12 @@ function orderHtml(o){const loc=o.method==="pickup"?"Pickup":[o.location&&o.loca
   else if(o.status==="awaiting_payment")body=payBox(o);
   else if(o.status==="rejected")body=`<div class="note bad">Your payment was not approved${o.rejectReason?": "+esc(o.rejectReason):""}. Please check and upload your receipt again.</div>`+payBox(o);
   else if(o.status==="payment_submitted")body='<div class="note info">We received your proof of payment and are checking it. The status will update here.</div>';
-  else if(o.status==="approved")body='<div class="note good">✅ Payment approved. Your cards will be printed soon.</div>';
+  else if(o.status==="approved")body=o.kind==="plan"?'<div class="note good">✅ Payment approved. Your REACH Pro plan is active.</div>':'<div class="note good">✅ Payment approved. Your cards will be printed soon.</div>';
   else if(o.status==="printing")body='<div class="note good">🖨️ Your cards are being printed.</div>';
   else if(o.status==="delivered")body='<div class="note good">📦 Done. Thank you for your order!</div>';
   const cancel=["awaiting_price","awaiting_payment","rejected"].includes(o.status)?'<button class="btn ghost sm" data-act="cancel" type="button" style="margin-top:12px;color:#d6204a">Cancel this order</button>':"";
   return `<div class="ord" data-id="${o.id}"><div class="oh"><b>${esc(o.ref)}</b>${stPill(o.status)}</div>
-    <div class="kv"><span>Card</span><b>${esc(o.cardName)}</b><span>Quantity</span><b>${o.qty}</b><span>Total</span><b>${o.amount!=null?money(o.amount,o.currency):"To be confirmed"}</b><span>${o.method==="pickup"?"Collect":"Deliver to"}</span><b>${esc(loc)}</b><span>Placed</span><b>${when(o.createdAt)}</b></div>${body}${cancel}</div>`}
+    <div class="kv">${o.kind==="plan"?`<span>Plan</span><b>REACH Pro</b><span>Period</span><b>${o.qty} month${o.qty>1?"s":""}</b>`:`<span>Card</span><b>${esc(o.cardName)}</b><span>Quantity</span><b>${o.qty}</b>`}<span>Total</span><b>${o.amount!=null?money(o.amount,o.currency):"To be confirmed"}</b>${o.kind==="plan"?"":`<span>${o.method==="pickup"?"Collect":"Deliver to"}</span><b>${esc(loc)}</b>`}<span>Placed</span><b>${when(o.createdAt)}</b></div>${body}${cancel}</div>`}
 function renderOrderList(){$("#ordList").innerHTML=orders.length?orders.map(orderHtml).join(""):'<div class="empty">No orders yet. Your orders will appear here.</div>'}
 $("#ordList").addEventListener("change",async e=>{if(!e.target.classList.contains("pfile"))return;const box=e.target.closest(".ord"),f=e.target.files[0];if(!f)return;
   try{const d=await imgToDataUrl(f,{max:1100,square:false,q:.72});if(dataUrlKB(d)>420)return toast("That image is too large. Try a smaller screenshot.");proofs[box.dataset.id]=d;$(".pprev",box).innerHTML=`<img class="thumb" src="${d}" alt="Receipt preview">`}
@@ -317,3 +322,97 @@ $("#ordList").onclick=async e=>{const b=e.target.closest("button");if(!b)return;
       await db.collection("orders").doc(id).update({status:"payment_submitted",txnId:txn,payerName:payer,payNote:$(".pnote",box).value.trim(),submittedAt:ts(),updatedAt:ts()});
       delete proofs[id];toast("Proof of payment sent ✓");await loadOrders();renderOrderList()}
     catch(x){console.error(x);toast("Couldn't send. Please try again.");b.disabled=false}}};
+
+
+/* ================= "What we offer": plan, items, inbox ================= */
+let plan=null,plansCfg=null,items=[],itEdit=null,itKind="product",itPhoto="",payMonths=1,inq=[];
+const scOf=c=>c.showcase||{};
+async function loadPlanData(force){if(!plansCfg||force)plansCfg=await getPlansCfg(db);
+  try{const s=await db.collection("plans").doc(user.uid).get();plan=s.exists?s.data():null}catch(e){plan=null}}
+async function loadItems(){const s=await db.collection("items").where("cardId","==",C().id).get();items=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order||0)-(b.order||0))}
+async function renderOffer(){
+  try{await loadPlanData();await loadItems()}catch(e){console.error(e);$("#planCard").innerHTML='<div class="note bad">Couldn\'t load this section. The database rules may need updating.</div>';return}
+  const c=C(),sc=scOf(c);
+  $("#scOn").checked=!!sc.on;$("#scTitle").value=sc.title||"";$("#scIntro").value=sc.intro||"";$("#introCount").textContent=($("#scIntro").value.length)+" / 1200";
+  $("#scHours").value=sc.hours||"";$("#scAreas").value=sc.areas||"";
+  const waDef=c.businessWhatsApp||((c.platforms||[]).find(p=>displayName(p.name)==="WhatsApp")||{}).detail||"",phDef=c.officePhone||((c.platforms||[]).find(p=>displayName(p.name)==="Phone")||{}).detail||"";
+  $("#scWa").value=sc.wa||waDef;$("#scPhone").value=sc.phone||phDef;$("#scMsg").checked=sc.msg!==false;
+  renderPlan();renderItems()}
+$("#scIntro").addEventListener("input",()=>$("#introCount").textContent=$("#scIntro").value.length+" / 1200");
+function renderPlan(){const st=planStatus(plan,plansCfg),L=plansCfg,box=$("#planCard"),n=items.length;
+  const explain=`<details><summary>How the plan works</summary><p>• Turn on “What we offer” to start a free ${L.trialDays}-day trial. During the trial you can add up to ${L.paidLimit} items.<br>• After the trial, ${L.freeLimit} items stay visible on your card for free. You choose which ones. The rest are hidden, never deleted.<br>• REACH Pro shows up to ${L.paidLimit} items. You pay by bank or mobile money, upload your receipt and we approve it.<br>• If Pro runs out, everything stays visible for ${L.graceDays} more days so you can renew. After that, ${L.freeLimit} items stay visible and nothing is deleted.</p></details>`;
+  const prices=(L.prices||[]).slice().sort((a,b)=>a.months-b.months);if(!prices.some(p=>p.months===payMonths)&&prices[0])payMonths=prices[0].months;
+  const upg=prices.length?`<div class="prices" id="payChips">${prices.map(p=>`<button type="button" class="cp ${payMonths===p.months?"on":""}" data-m="${p.months}">${p.months} month${p.months>1?"s":""} · ${money(p.price,L.currency)}</button>`).join("")}</div><button class="btn" id="upgBtn" type="button">Upgrade to REACH Pro</button>`:"";
+  let t="",h="",extra="";
+  if(L.enabled===false){box.className="card plan free";box.innerHTML='<h2>Paused</h2><p>This section is paused for now. Please check back soon.</p>';return}
+  if(st.state==="new"){t="Start your free trial";h=`Turn on “What we offer” below to start a free ${L.trialDays}-day trial with up to ${L.paidLimit} items.`}
+  else if(st.state==="trial"){t=`Free trial: ${st.days} day${st.days===1?"":"s"} left`;h=`You can add up to ${L.paidLimit} items during the trial. On ${dateShort(st.until)}, ${L.freeLimit} items stay visible on your card unless you upgrade. Pick which ones below.`;extra=upg}
+  else if(st.state==="pro"){t="REACH Pro is active";h=`Valid until ${dateShort(st.until)} (${st.days} day${st.days===1?"":"s"} left). You can show up to ${L.paidLimit} items.`;extra=upg?`<details><summary>Renew early</summary>${upg}</details>`:""}
+  else if(st.state==="grace"){t="Your Pro plan has ended";h=`Your items stay visible for ${st.days} more day${st.days===1?"":"s"}. Renew to keep all ${n>L.freeLimit?n:L.paidLimit} items showing. After that, only ${L.freeLimit} stay visible. Nothing is deleted.`;extra=upg}
+  else{t="Free plan";h=`${L.freeLimit} items stay visible on your card.${n>L.freeLimit?` You have ${n} items, so ${n-L.freeLimit} are hidden but safe. Upgrade to show them again.`:" Upgrade to show up to "+L.paidLimit+" items."}`;extra=upg}
+  box.className="card plan "+st.state;box.innerHTML=`<h2>${t}</h2><p>${h}</p>${extra}${explain}`}
+$("#planCard").addEventListener("click",async e=>{const c=e.target.closest(".cp[data-m]");if(c){payMonths=+c.dataset.m;$$("#payChips .cp").forEach(x=>x.classList.toggle("on",x===c));return}
+  if(e.target.id!=="upgBtn")return;const L=plansCfg,p=(L.prices||[]).find(x=>x.months===payMonths);if(!p)return;
+  try{await loadOrders();
+    if(orders.some(o=>o.kind==="plan"&&["awaiting_payment","payment_submitted"].includes(o.status))){toast("You already have a plan payment in progress");return setTab("orders")}
+    const ref=orderRef(),d=db.collection("orders").doc();
+    await d.set({owner:user.uid,kind:"plan",months:p.months,qty:p.months,cardId:"",cardName:"REACH Pro",label:"",method:"digital",customer:{name:udata.name||C().name,phone:"",email:user.email||""},location:{region:"",city:"",address:""},notes:"",amount:p.price,currency:L.currency||"GHS",deliveryFee:0,status:"awaiting_payment",ref,createdAt:ts(),updatedAt:ts()});
+    toast("Order created ✓ Now pay and upload your receipt");setTab("orders")}
+  catch(x){console.error(x);toast("Couldn't create the order. Please try again.")}});
+
+/* business description + contact settings */
+$("#saveSc").onclick=async()=>{const on=$("#scOn").checked,c=C();
+  if(on&&!plan){try{await db.collection("plans").doc(user.uid).set({owner:user.uid,trialStart:ts(),createdAt:ts()});await loadPlanData();toast(`Your ${plansCfg.trialDays}-day free trial has started 🎉`)}catch(x){console.error(x);toast("Couldn't start the trial. The database rules may need updating.");return}}
+  await saveCard({showcase:{on,title:$("#scTitle").value.trim(),intro:$("#scIntro").value.trim(),hours:$("#scHours").value.trim(),areas:$("#scAreas").value.trim(),wa:$("#scWa").value.trim(),phone:$("#scPhone").value.trim(),msg:$("#scMsg").checked}},"Saved ✓");renderPlan()};
+
+/* items */
+function visibleIds(){const st=planStatus(plan,plansCfg);return new Set(pickVisible(items,st.limit).map(i=>i.id))}
+function renderItems(){const st=planStatus(plan,plansCfg),L=plansCfg,vis=visibleIds(),cur=L.currency,keepN=items.filter(i=>i.keep).length;
+  $("#itCount").textContent=items.length+" / "+st.limit;
+  $("#itPriceBox").classList.toggle("hide",["contact","free"].includes($("#itPT").value));
+  const needKeep=items.length>L.freeLimit;
+  $("#itList").innerHTML=(needKeep?`<div class="note info">Choose which ${L.freeLimit} items stay visible on the free plan (${keepN} of ${L.freeLimit} picked). Tick “Keep visible”.</div>`:"")+
+   (items.length?items.map((i,ix)=>`<div class="it ${vis.has(i.id)&&!i.adminHidden?"":"off"}" data-id="${i.id}">${safeImg(i.photo)?`<img class="th" src="${i.photo}" alt="">`:`<div class="nophoto">${i.kind==="service"?"🛠":"🛍"}</div>`}
+     <div class="tx"><b>${esc(i.name)}</b><span>${i.kind==="service"?"Service":"Product"} · ${esc(itemPrice(i,cur))}</span>${i.adminHidden?'<span style="display:block;color:#be123c">Hidden by REACH admin</span>':vis.has(i.id)?"":'<span style="display:block">Hidden on your public card (over the limit)</span>'}</div>
+     <div class="ra">${needKeep?`<label class="keep"><input type="checkbox" data-keep ${i.keep?"checked":""}>Keep visible</label>`:""}<button class="ic" data-up title="Move up" ${ix===0?"disabled":""}>↑</button><button class="ic" data-down title="Move down" ${ix===items.length-1?"disabled":""}>↓</button><button class="ic" data-edit title="Edit">✎</button><button class="ic danger" data-del title="Delete">🗑</button></div></div>`).join(""):'<div class="empty">No items yet. Add your first one above 👆</div>')}
+$("#itPT").onchange=()=>$("#itPriceBox").classList.toggle("hide",["contact","free"].includes($("#itPT").value));
+$("#itKind").onclick=e=>{const b=e.target.closest("button");if(!b)return;itKind=b.dataset.k;$$("#itKind button").forEach(x=>x.classList.toggle("on",x===b))};
+$("#itPhotoBtn").onclick=()=>$("#itPhotoIn").click();
+$("#itPhotoIn").onchange=async()=>{const f=$("#itPhotoIn").files[0];$("#itPhotoIn").value="";if(!f)return;
+  try{const d=await imgToDataUrl(f,{max:800,square:false,q:.72});if(dataUrlKB(d)>300)return toast("That photo is too large. Try a smaller one.");itPhoto=d;setItPhoto()}catch(e){toast("Couldn't read that image. Use a JPG or PNG.")}};
+function setItPhoto(){$("#itPhoto").innerHTML=itPhoto?`<img src="${itPhoto}" alt="">`:"📷";$("#itPhotoRm").classList.toggle("hide",!itPhoto)}
+$("#itPhotoRm").onclick=()=>{itPhoto="";setItPhoto()};
+function resetItForm(){itEdit=null;itKind="product";itPhoto="";$("#itName").value="";$("#itDesc").value="";$("#itPT").value="fixed";$("#itPrice").value="";$("#itErr").textContent="";$$("#itKind button").forEach(x=>x.classList.toggle("on",x.dataset.k==="product"));
+  $("#itSave").textContent="Add item";$("#itCancel").classList.add("hide");setItPhoto();$("#itPriceBox").classList.remove("hide")}
+$("#itCancel").onclick=resetItForm;
+$("#itForm").onsubmit=async e=>{e.preventDefault();const err=$("#itErr");err.textContent="";const name=$("#itName").value.trim(),pt=$("#itPT").value,st=planStatus(plan,plansCfg);
+  if(!name)return err.textContent="Please give the item a name.";
+  const needPrice=["fixed","from"].includes(pt),price=needPrice?parseFloat($("#itPrice").value):0;
+  if(needPrice&&!(price>=0))return err.textContent="Enter a price, or choose “Contact for price”.";
+  if(!itEdit&&items.length>=st.limit)return err.textContent=st.state==="trial"||st.state==="pro"||st.state==="grace"?`You can add up to ${st.limit} items.`:`The free plan holds ${st.limit} items. Upgrade to add more.`;
+  const data={name,desc:$("#itDesc").value.trim(),kind:itKind,priceType:pt,price,photo:itPhoto,updatedAt:ts()};
+  $("#itSave").disabled=true;
+  try{if(itEdit)await db.collection("items").doc(itEdit).update(data);
+    else await db.collection("items").add({...data,owner:user.uid,cardId:C().id,order:(items.reduce((m,i)=>Math.max(m,i.order||0),0))+1,keep:false,adminHidden:false,createdAt:ts()});
+    toast(itEdit?"Item saved ✓":"Item added ✓");resetItForm();await loadItems();renderItems()}
+  catch(x){console.error(x);err.textContent="Couldn't save. Please try again."}
+  $("#itSave").disabled=false};
+$("#itList").onclick=async e=>{const b=e.target.closest("button");if(!b)return;const row=b.closest(".it"),id=row.dataset.id,i=items.findIndex(x=>x.id===id);
+  if(b.hasAttribute("data-edit")){const it=items[i];itEdit=id;itKind=it.kind||"product";itPhoto=safeImg(it.photo);$("#itName").value=it.name||"";$("#itDesc").value=it.desc||"";$("#itPT").value=it.priceType||"fixed";$("#itPrice").value=it.price??"";
+    $$("#itKind button").forEach(x=>x.classList.toggle("on",x.dataset.k===itKind));setItPhoto();$("#itSave").textContent="Save changes";$("#itCancel").classList.remove("hide");$("#itPriceBox").classList.toggle("hide",["contact","free"].includes(it.priceType));$("#itForm").scrollIntoView({behavior:"smooth",block:"center"});return}
+  if(b.hasAttribute("data-del")){if(!confirm("Delete “"+items[i].name+"”?"))return;try{await db.collection("items").doc(id).delete();await loadItems();renderItems();toast("Deleted")}catch(x){toast("Couldn't delete")}return}
+  const j2=b.hasAttribute("data-up")?i-1:b.hasAttribute("data-down")?i+1:-1;
+  if(j2>=0&&j2<items.length){const a=items[i],c2=items[j2],oa=a.order||0,oc=c2.order||0;try{await db.collection("items").doc(a.id).update({order:oc===oa?oc+(j2>i?1:-1):oc});await db.collection("items").doc(c2.id).update({order:oa});await loadItems();renderItems()}catch(x){toast("Couldn't reorder")}}};
+$("#itList").onchange=async e=>{if(!e.target.hasAttribute("data-keep"))return;const id=e.target.closest(".it").dataset.id,L=plansCfg;
+  if(e.target.checked&&items.filter(i=>i.keep).length>=L.freeLimit){e.target.checked=false;return toast(`Only ${L.freeLimit} items can stay visible on the free plan`)}
+  try{await db.collection("items").doc(id).update({keep:e.target.checked});await loadItems();renderItems()}catch(x){toast("Couldn't save")}};
+
+/* inbox */
+async function refreshInbox(quiet){try{const s=await db.collection("inquiries").where("owner","==",user.uid).get();inq=s.docs.map(d=>({id:d.id,...d.data(),ts:ms(d.data().ts)})).sort((a,b)=>b.ts-a.ts);renderInbox()}catch(e){if(!quiet)console.error(e)}}
+function renderInbox(){const n=inq.filter(m=>m.status==="new").length;$("#inBadge").textContent=n?"("+n+")":"";$("#inCount").textContent=inq.length;
+  $("#inList").innerHTML=inq.length?inq.map(m=>`<div class="msgc ${m.status==="new"?"new":""}" data-id="${m.id}"><div class="mh"><b>${esc(m.name)} ${m.status==="new"?'<span class="pill">New</span>':m.status==="reported"?'<span class="st red">Reported</span>':""}</b><span class="sub" style="font-size:.8rem;margin:0">${when(m.ts)}</span></div>
+    ${m.itemName?`<div class="hint" style="margin:4px 0 0">About: ${esc(m.itemName)}</div>`:""}<p>${esc(m.message)}</p>
+    <div class="btnrow" style="margin-top:10px"><a class="btn" style="padding:9px 14px" href="tel:${esc(String(m.phone).replace(/[^\d+]/g,""))}">📞 Call ${esc(m.phone)}</a><a class="btn ghost" style="padding:9px 14px" target="_blank" rel="noopener" href="${esc(waLink(m.phone,"Hi "+m.name.split(" ")[0]+", thanks for your message on REACH."))}">WhatsApp</a>
+    ${m.status==="new"?'<button class="btn ghost sm" data-mk="read" type="button">Mark read</button>':""}${m.status!=="reported"?'<button class="btn ghost sm" data-mk="reported" type="button">Report spam</button>':""}<button class="btn ghost sm" data-mk="del" type="button" style="color:#d6204a">Delete</button></div></div>`).join(""):'<div class="empty">No messages yet. When someone messages you from your card, it appears here.</div>'}
+$("#inList").onclick=async e=>{const b=e.target.closest("button[data-mk]");if(!b)return;const id=b.closest(".msgc").dataset.id,k=b.dataset.mk;
+  try{if(k==="del"){if(!confirm("Delete this message?"))return;await db.collection("inquiries").doc(id).delete()}else await db.collection("inquiries").doc(id).update({status:k});await refreshInbox();if(k==="reported")toast("Reported. Thank you.")}catch(x){toast("Couldn't update")}};

@@ -49,7 +49,10 @@ async function footerPill(x,W,H,th,right){const m=await loadImg("logo-mark.png")
 function mkCanvas(W,H){const c=document.createElement("canvas");c.width=W;c.height=H;return c}
 async function fontsReady(){try{await Promise.all([document.fonts.load('800 40px "Bricolage Grotesque"'),document.fonts.load('700 24px "Manrope"')])}catch(e){}}
 
-async function drawFront(card){await fontsReady();
+function watermark(x,W,H,th){x.save();x.globalAlpha=.2;x.fillStyle=th.bar?"#0f3a63":"#ffffff";x.textAlign="center";x.textBaseline="middle";x.font=`800 54px ${FONT}`;
+  x.translate(W/2,H/2);x.rotate(-.42);for(let r=-5;r<=5;r++)for(let k=-3;k<=3;k++)x.fillText("REACH PREVIEW",k*470+(r%2?235:0),r*105);x.restore();
+  x.save();x.fillStyle="rgba(15,58,99,.9)";rr(x,W-410,H-62,380,40,20);x.fill();x.fillStyle="#fff";x.font=`800 20px ${FONT2}`;x.textAlign="center";x.textBaseline="middle";x.fillText("Preview · order printed cards to remove",W-220,H-42);x.restore()}
+async function drawFront(card,o={}){await fontsReady();
   const th=cardTheme(card),W=1050,H=600,c=mkCanvas(W,H),x=c.getContext("2d");paintBg(x,th,W,H);
   const photo=safeImg(card.photo)?await loadImg(card.photo):null,logoI=safeImg(card.companyLogo)?await loadImg(card.companyLogo):null;
   let tx=60;
@@ -69,13 +72,14 @@ async function drawFront(card){await fontsReady();
   if(!items.length){x.fillStyle=th.sub;x.font=`700 26px ${FONT2}`;x.fillText("Scan the QR code on the back to connect.",60,310)}
   await footerPill(x,W,H,th,"Scan the QR on the back");
   if(th.bar){x.fillStyle=th.barColor;x.fillRect(0,H-10,W,10)}
+  if(o.watermark)watermark(x,W,H,th);
   return c}
 
 function makeQr(url,size=340,ink="#0a2a55"){const d=document.createElement("div");d.style.cssText="position:fixed;left:-9999px;top:0";document.body.appendChild(d);
   new QRCode(d,{text:url,width:size,height:size,colorDark:ink,colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M});
   const src=d.querySelector("canvas"),o=mkCanvas(size,size);o.getContext("2d").drawImage(src,0,0,size,size);d.remove();return o}
 
-async function drawBack(card,url){await fontsReady();
+async function drawBack(card,url,o={}){await fontsReady();
   const th=cardTheme(card),W=1050,H=600,c=mkCanvas(W,H),x=c.getContext("2d");paintBg(x,th,W,H);
   x.fillStyle="#fff";rr(x,70,80,390,390,34);x.fill();if(th.bar){x.strokeStyle="#d4e1ff";x.lineWidth=2;x.stroke()}
   x.drawImage(makeQr(url,350,th.qr),90,100,350,350);
@@ -83,7 +87,7 @@ async function drawBack(card,url){await fontsReady();
   wrap(x,card.name,470,2).forEach(l=>{x.fillText(l,520,y);y+=62});
   x.font=`700 28px ${FONT2}`;x.fillStyle=th.sub;const role=[card.title,card.company].filter(Boolean).join(" · ");if(role){wrap(x,role,470,2).forEach(l=>{x.fillText(l,520,y);y+=36})}
   y+=24;x.fillStyle=th.accent;x.font=`800 32px ${FONT}`;wrap(x,"Scan to see how you can reach me",460,3).forEach(l=>{x.fillText(l,520,y);y+=42});
-  await footerPill(x,W,H,th,"");return c}
+  await footerPill(x,W,H,th,"");if(o.watermark)watermark(x,W,H,th);return c}
 
 async function drawQrCard(card,url){await fontsReady();
   const W=900,H=1160,c=mkCanvas(W,H),x=c.getContext("2d");x.fillStyle="#ffffff";x.fillRect(0,0,W,H);

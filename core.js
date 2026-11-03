@@ -339,11 +339,11 @@ function analyticsHtml(hh,opt={}){
 
 /* ---------- site navigation + footer (About, How it works, FAQs, Contact) ---------- */
 function buildNav(){const n=$("#nav");if(!n)return;const page=location.pathname.split("/").pop()||"index.html";
-  const L=[["how-it-works.html","How it works"],["about.html","About"],["faq.html","FAQs"],["contact.html","Contact"]];
+  const L=[["how-it-works.html","How it works"],["pricing.html","Pricing"],["about.html","About"],["faq.html","FAQs"],["contact.html","Contact"]];
   n.innerHTML=L.map(([hh,t])=>`<a href="${hh}" class="${page===hh?"on":""}">${t}</a>`).join("");
   const b=$("#burger");if(b)b.onclick=()=>n.classList.toggle("open")}
 function buildFoot(){const f=$("#foot");if(!f)return;
-  f.innerHTML=`<nav class="fnav"><a href="./">Home</a><a href="how-it-works.html">How it works</a><a href="about.html">About</a><a href="faq.html">FAQs</a><a href="contact.html">Contact</a></nav>`}
+  f.innerHTML=`<nav class="fnav"><a href="./">Home</a><a href="how-it-works.html">How it works</a><a href="pricing.html">Pricing</a><a href="about.html">About</a><a href="faq.html">FAQs</a><a href="contact.html">Contact</a></nav>`}
 document.addEventListener("DOMContentLoaded",()=>{buildNav();buildFoot()});
 
 /* ================= orders (printed cards) ================= */
@@ -362,3 +362,25 @@ async function getSettings(db){try{const s=await db.collection("settings").doc("
 function priceFor(set,qty,method){const t=(set.tiers||[]).find(x=>+x.qty===+qty);if(!t||!(+t.price>=0))return null;const fee=method==="delivery"?(+set.deliveryFee||0):0;return{cards:+t.price,fee,total:+t.price+fee}}
 const waLink=(num,text)=>"https://wa.me/"+String(num||"").replace(/[^\d]/g,"")+"?text="+encodeURIComponent(text||"");
 const dataUrlKB=s=>Math.round((s||"").length*0.75/1024);
+
+/* ================= "What we offer" showcase: plans, trial, limits ================= */
+/* Starter values. Admin > Settings > Plans overrides these. Prices are examples. */
+const DEFAULT_PLANS={enabled:true,freeLimit:5,paidLimit:50,trialDays:10,graceDays:5,currency:"GHS",
+  prices:[{months:1,price:40},{months:3,price:108},{months:12,price:384}]};
+async function getPlansCfg(db){try{const s=await db.collection("settings").doc("plans").get();return s.exists?{...DEFAULT_PLANS,...s.data()}:{...DEFAULT_PLANS}}catch(e){return{...DEFAULT_PLANS}}}
+const DAY=864e5;
+/* state: new (never turned on) | trial | pro | grace (paid plan just expired) | free */
+function planStatus(plan,cfg,now=Date.now()){const L=cfg||DEFAULT_PLANS,paid=plan?ms(plan.paidUntil):0,tr=plan?ms(plan.trialStart):0;
+  if(paid){if(now<=paid)return{state:"pro",limit:L.paidLimit,until:paid,days:Math.ceil((paid-now)/DAY)};
+    const g=paid+L.graceDays*DAY;if(now<=g)return{state:"grace",limit:L.paidLimit,until:g,days:Math.ceil((g-now)/DAY)}}
+  if(tr&&now<tr+L.trialDays*DAY)return{state:"trial",limit:L.paidLimit,until:tr+L.trialDays*DAY,days:Math.ceil((tr+L.trialDays*DAY-now)/DAY)};
+  return{state:(tr||paid)?"free":"new",limit:L.freeLimit,until:0,days:0}}
+/* which items the public sees: everything up to the limit; over the limit the owner's "keep visible" picks come first */
+function pickVisible(items,limit){const ok=items.filter(i=>!i.adminHidden).sort((a,b)=>(a.order||0)-(b.order||0));
+  if(ok.length<=limit)return ok;const keep=ok.filter(i=>i.keep),rest=ok.filter(i=>!i.keep);return[...keep,...rest].slice(0,limit).sort((a,b)=>(a.order||0)-(b.order||0))}
+function itemPrice(i,cur){const t=i.priceType||"contact";if(t==="free")return"Free";if(t==="contact"||!(+i.price>=0)||i.price==="")return"Contact for price";return(t==="from"?"From ":"")+money(i.price,cur)}
+function dateShort(t){return t?new Date(t).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}):""}
+
+/* fills <span data-cfg="trialDays"> etc. on the info pages with the live plan settings */
+function fillCfg(){const set=cf=>{$$("[data-cfg]").forEach(e=>{const k=e.dataset.cfg;if(k==="prices")e.innerHTML=(cf.prices||[]).length?cf.prices.map(p=>`<span class="pill" style="margin-right:6px">${p.months} month${p.months>1?"s":""} · ${money(p.price,cf.currency)}</span>`).join(""):"Prices are shown when you upgrade.";else e.textContent=cf[k]})};
+  set(DEFAULT_PLANS);fb().then(f=>getPlansCfg(f.db)).then(set).catch(()=>{})}

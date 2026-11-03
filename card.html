@@ -21,6 +21,15 @@ a.item:hover,button.item:hover{transform:translateY(-2px);border-color:var(--a1)
 .item .t{flex:1;min-width:0}.item b{display:block}.item span.v{color:var(--muted);font-weight:600;overflow-wrap:anywhere;font-size:.92rem}
 .item .go{font-weight:800;color:var(--a2);font-size:.85rem}
 .cta{text-align:center;margin-top:22px;color:var(--muted);font-weight:700}.cta a{color:var(--a1);font-weight:800}
+.cbar{display:flex;gap:8px;margin-top:14px}.cbar>*{flex:1;text-align:center;padding:14px 8px;font-size:.95rem}
+.offer{background:#fff;border:1.5px solid var(--line);border-radius:24px;padding:18px 18px 8px;margin-top:16px;box-shadow:0 12px 24px -20px rgba(37,99,255,.6)}
+.offer h3{font-size:1.15rem;margin-bottom:8px}.offer .intro{color:var(--muted);font-weight:600;line-height:1.7;white-space:pre-line;overflow-wrap:anywhere}
+.offer .meta{display:flex;gap:8px 16px;flex-wrap:wrap;margin:10px 0 4px;font-weight:700;font-size:.9rem}.offer .meta span{background:#f1f6ff;border-radius:99px;padding:6px 12px}
+.igrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0 10px}@media(max-width:380px){.igrid{grid-template-columns:1fr}}
+.icard{border:1.5px solid var(--line);border-radius:18px;overflow:hidden;background:#fff;display:flex;flex-direction:column}
+.icard img,.icard .iph{width:100%;aspect-ratio:4/3;object-fit:cover;background:linear-gradient(135deg,#dbe8ff,#ffe0ee);display:grid;place-items:center;font-size:2rem}
+.icard .ib{padding:10px 12px 12px;display:flex;flex-direction:column;gap:4px;flex:1}.icard .kind{font-size:.7rem;font-weight:800;color:var(--a1);text-transform:uppercase;letter-spacing:.06em}
+.icard .pr{font-weight:800;color:var(--a2)}.icard p{color:var(--muted);font-weight:600;font-size:.85rem;line-height:1.45;overflow-wrap:anywhere}.icard .btn{margin-top:auto}
 .mini{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:26px;font-weight:800;letter-spacing:.1em;color:var(--ink);text-decoration:none}.mini img{height:30px}
 </style></head><body>
 <div class="page" id="page"><div class="spin"></div></div>
@@ -34,7 +43,19 @@ function msg(t,s){$("#page").innerHTML=`<div class="card" style="text-align:cent
     const {db,auth}=await fb();const snap=await db.collection("cards").doc(id).get();
     if(!snap.exists)return msg("Card not found","It may have been deleted, or the link is wrong.");
     const d=snap.data(),lines=contactLines(d),th=cardTheme(d);document.title=d.name+" · REACH";
-    const photo=safeImg(d.photo),clogo=safeImg(d.companyLogo);
+    const photo=safeImg(d.photo),clogo=safeImg(d.companyLogo),sc=d.showcase||{};
+    let showcaseHtml="",cbarHtml="",cfgCur="GHS";
+    if(sc.on){try{const [cfg,ps,is]=await Promise.all([getPlansCfg(db),db.collection("plans").doc(d.owner).get(),db.collection("items").where("cardId","==",id).get()]);
+      if(cfg.enabled!==false){cfgCur=cfg.currency||"GHS";const st=planStatus(ps.exists?ps.data():null,cfg),vis=pickVisible(is.docs.map(x=>({id:x.id,...x.data()})),st.limit),canMsg=sc.msg!==false,waNum=sc.wa||"",ph=sc.phone||"";
+        const btns=[];
+        if(waNum)btns.push(`<a class="btn accent" data-p="WhatsApp" href="${esc(waLink(waNum,"Hi "+String(d.name||"").split(" ")[0]+", I found you on REACH."))}" target="_blank" rel="noopener">💬 WhatsApp</a>`);
+        if(ph)btns.push(`<a class="btn" data-p="Phone" href="tel:${esc(ph.replace(/[^\d+]/g,""))}">📞 Call</a>`);
+        if(canMsg)btns.push('<button class="btn ghost" id="msgBtn" type="button">✉️ Message</button>');
+        cbarHtml=btns.length?`<div class="cbar">${btns.join("")}</div>`:"";
+        const hasText=sc.intro||sc.hours||sc.areas;
+        if(hasText||vis.length)showcaseHtml=`<div class="offer"><h3>${esc(sc.title||"What we offer")}</h3>${sc.intro?`<p class="intro">${esc(sc.intro)}</p>`:""}${sc.hours||sc.areas?`<div class="meta">${sc.hours?`<span>🕘 ${esc(sc.hours)}</span>`:""}${sc.areas?`<span>📍 ${esc(sc.areas)}</span>`:""}</div>`:""}
+          ${vis.length?`<div class="igrid">${vis.map(i=>`<div class="icard">${safeImg(i.photo)?`<img src="${i.photo}" alt="${esc(i.name)}" loading="lazy">`:`<div class="iph">${i.kind==="service"?"🛠":"🛍"}</div>`}<div class="ib"><span class="kind">${i.kind==="service"?"Service":"Product"}</span><b>${esc(i.name)}</b><div class="pr">${esc(itemPrice(i,cfgCur))}</div>${i.desc?`<p>${esc(i.desc)}</p>`:""}${canMsg?`<button class="btn ghost sm ask" data-n="${esc(i.name)}" type="button">Ask about this</button>`:waNum?`<a class="btn ghost sm" target="_blank" rel="noopener" href="${esc(waLink(waNum,"Hi, I'm interested in: "+i.name))}">Ask on WhatsApp</a>`:""}</div></div>`).join("")}</div>`:""}</div>`}}
+    catch(e){console.error("showcase",e)}}
     const track=async(row)=>{try{const u=await authReady(auth);if(u&&u.uid===d.owner)return;
       const rec={card:id,owner:d.owner,type:row?"click":"view",src,vid:vid(),ts:ts()};if(row)rec.p=row;await db.collection("hits").add(rec)}catch(e){}};
     $("#page").innerHTML=`
@@ -42,13 +63,29 @@ function msg(t,s){$("#page").innerHTML=`<div class="card" style="text-align:cent
       ${d.title?`<div class="role">${esc(d.title)}</div>`:""}
       ${d.company?`<div class="co">${clogo?`<span class="lg"><img src="${clogo}" alt=""></span>`:""}<span>${esc(d.company)}</span></div>`:(clogo?`<div class="co"><span class="lg"><img src="${clogo}" alt=""></span></div>`:"")}
       ${d.bio?`<p>${esc(d.bio)}</p>`:""}</div>
+     ${cbarHtml}
      ${d.about?`<div class="aboutbox"><h3>About ${esc(String(d.name||"").split(" ")[0])}</h3><p id="abt" class="${d.about.length>320?"clamp":""}">${esc(d.about)}</p>${d.about.length>320?'<button class="btn ghost sm" id="abtBtn" type="button">Read more</button>':""}</div>`:""}
+     ${showcaseHtml}
      <div class="list">${lines.length?lines.map((l,i)=>{const inner=`${l.icon?`<span class="logo" style="--s:48px">${l.icon}</span>`:logo(l.logoName||l.name,48,l.value)}<div class="t"><b>${esc(l.name)}</b><span class="v">${esc(l.value)}</span></div>`;
        return l.href?`<a class="item" data-p="${esc(l.kind)}" href="${esc(l.href)}" target="_blank" rel="noopener">${inner}<span class="go">Open ↗</span></a>`
         :`<button class="item cp-btn" data-p="${esc(l.kind)}" data-c="${esc(l.value)}">${inner}<span class="go">Copy</span></button>`}).join(""):'<div class="empty">No contact details added yet.</div>'}</div>
      <button class="btn block" id="vc" style="margin-top:6px">➕ Save to my contacts</button>
      <p class="cta">Want your own card? <a href="./">Make one free</a></p>
      <a class="mini" href="./"><img src="logo-mark.png" alt="">REACH</a>`;
+    document.body.insertAdjacentHTML("beforeend",`<div class="modal hide" id="mMsg"><div class="mbox"><h2>Send a message</h2><p class="sub" id="mmSub">${esc(d.name)} will contact you on the number you give.</p><label for="mmName" style="margin-top:0">Your name</label><input id="mmName" maxlength="60" autocomplete="name"><label for="mmPhone">Your phone number</label><input id="mmPhone" type="tel" maxlength="25" autocomplete="tel"><label for="mmText">Message</label><textarea id="mmText" rows="4" maxlength="800"></textarea><input id="mmHp" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px" aria-hidden="true"><p class="err" id="mmErr"></p><div class="mact"><button class="btn ghost" id="mmCancel" type="button">Cancel</button><button class="btn accent" id="mmSend" type="button">Send message</button></div></div></div>`);
+    let askItem="";const openMsg=n=>{askItem=n||"";$("#mmSub").textContent=(n?"About: "+n+". ":"")+d.name+" will contact you on the number you give.";$("#mmErr").textContent="";$("#mMsg").classList.remove("hide");$("#mmName").focus()};
+    if($("#msgBtn"))$("#msgBtn").onclick=()=>openMsg("");$$(".ask").forEach(b=>b.onclick=()=>openMsg(b.dataset.n));
+    $("#mmCancel").onclick=()=>$("#mMsg").classList.add("hide");$("#mMsg").addEventListener("click",e=>{if(e.target.id==="mMsg")$("#mMsg").classList.add("hide")});
+    $("#mmSend").onclick=async()=>{const nm=$("#mmName").value.trim(),ph=$("#mmPhone").value.trim(),tx=$("#mmText").value.trim(),er=$("#mmErr");er.textContent="";
+      if(!nm)return er.textContent="Please enter your name.";if(ph.replace(/[^\d]/g,"").length<7)return er.textContent="Please enter a phone number so they can reply.";if(tx.length<3)return er.textContent="Please write a short message.";
+      if($("#mmHp").value){$("#mMsg").classList.add("hide");return toast("Message sent ✓")}
+      try{const last=+localStorage.getItem("reach_msg_t")||0;if(Date.now()-last<30000)return er.textContent="Please wait a few seconds before sending another message."}catch(x){}
+      $("#mmSend").disabled=true;
+      try{await db.collection("inquiries").add({card:id,owner:d.owner,name:nm,phone:ph,message:tx,itemName:askItem,status:"new",ts:ts()});try{localStorage.setItem("reach_msg_t",String(Date.now()))}catch(x){}
+        $("#mMsg").classList.add("hide");$("#mmText").value="";toast("Message sent ✓ They will contact you on "+ph)}
+      catch(x){console.error(x);er.textContent="Couldn't send your message. Please try again."}
+      $("#mmSend").disabled=false};
+    $$(".cbar a").forEach(a=>a.addEventListener("click",()=>track(a.dataset.p)));
     if($("#abtBtn"))$("#abtBtn").onclick=()=>{const p=$("#abt"),c=p.classList.toggle("clamp");$("#abtBtn").textContent=c?"Read more":"Show less"};
     $$(".item").forEach(el=>el.addEventListener("click",async()=>{track(el.dataset.p);if(el.classList.contains("cp-btn")){try{await navigator.clipboard.writeText(el.dataset.c);toast("Copied ✓")}catch(e){toast(el.dataset.c)}}}));
     $("#vc").onclick=()=>{
