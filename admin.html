@@ -77,6 +77,7 @@ summary .t{flex:1;min-width:0}summary b{display:block}summary span.m{color:var(-
     <label class="tick"><input type="checkbox" id="pEn"> “What we offer” feature is switched on</label>
     <div class="two"><div><label for="pFree">Items visible on the free plan</label><input id="pFree" type="number" min="0"></div><div><label for="pPaid">Item limit on trial and Pro</label><input id="pPaid" type="number" min="1"></div></div>
     <div class="two"><div><label for="pTrial">Free trial (days)</label><input id="pTrial" type="number" min="0"></div><div><label for="pGrace">Grace period after Pro ends (days)</label><input id="pGrace" type="number" min="0"></div></div>
+    <div class="two"><div><label class="tick"><input type="checkbox" id="pTeamOn"> Team cards (bulk upload) switched on</label></div><div><label for="pTeamMax">Max team cards per account</label><input id="pTeamMax" type="number" min="0"></div></div>
     <h3 class="ah">Pro price list</h3><div id="pRows"></div><button class="btn ghost sm" id="addP" type="button" style="margin-top:8px">＋ Add a period</button>
     <div class="btnrow"><button class="btn accent" id="saveP" type="button">Save plan settings</button></div>
   </div></div>
@@ -118,7 +119,7 @@ async function load(){
   const why=names.map((n,i)=>rs[i].status!=="fulfilled"?n+" ("+((rs[i].reason&&rs[i].reason.code)||"error")+")":null).filter(Boolean);
   const g=i=>rs[i].status==="fulfilled"?rs[i].value.docs:[];
   const priv={};g(1).forEach(d=>priv[d.id]=d.data());
-  cardsAll=g(2).map(d=>({id:d.id,...d.data()}));
+  cardsAll=g(2).map(d=>({id:d.id,...d.data()}));resolveLogos(cardsAll);
   U=g(0).map(d=>{const v=d.data(),p=priv[d.id]||{};return{id:d.id,name:v.name||p.name||"(no name)",email:p.email||"",createdAt:ms(v.createdAt),cards:cardsAll.filter(c=>c.owner===d.id).sort((a,b)=>ms(a.createdAt)-ms(b.createdAt))}}).sort((a,b)=>b.createdAt-a.createdAt);
   fbAll=g(3).map(d=>({id:d.id,...d.data(),ts:ms(d.data().ts)})).sort((a,b)=>b.ts-a.ts);
   hitsAll=g(4).map(d=>{const v=d.data();return{...v,ts:ms(v.ts)||Date.now()}});loadedHits=true;
@@ -132,6 +133,8 @@ async function load(){
   if(failed.length)w.innerHTML="⚠️ Couldn't read: <b>"+why.join(", ")+"</b>. If it says permission-denied, publish the latest Firestore rules from the README. Then tap Refresh.";
   render();planSummary();renderFb();renderMsgs();renderOrders();renderSettings()}
 
+function teamBlock(u){const t=u.cards.filter(c=>c.team);if(!t.length)return"";
+  return `<details class="tdet" style="margin-top:12px"><summary style="padding:10px 12px;font-weight:800">👥 Team cards (${t.length})</summary>${t.map(c=>`<div class="row"><span class="logo" style="--s:40px"><b>${esc((c.name||"?")[0].toUpperCase())}</b></span><div class="rt"><b>${esc(c.name)}</b><span>${esc(c.title||"")}</span></div><div class="ra"><button class="btn ghost sm" data-act="qr" data-cid="${c.id}" type="button">QR &amp; cards</button><a class="btn ghost sm" href="${esc(cardUrl(c.id))}" target="_blank" rel="noopener">Open</a><button class="ic danger" data-act="delcard" data-cid="${c.id}" type="button" title="Delete">🗑</button></div></div>`).join("")}</details>`}
 function render(){
   const q=norm($("#q").value||"");
   const hay=u=>u.name+u.email+u.cards.map(c=>c.label+c.name+c.company+c.title+(c.platforms||[]).map(p=>p.name+p.detail).join("")).join("");
@@ -144,10 +147,10 @@ function render(){
     <div class="inner"><div class="tools"><button class="btn" data-act="reset" data-uid="${u.id}">✉️ Send reset email</button><button class="btn ghost" data-act="deluser" data-uid="${u.id}" style="color:#d6204a">Delete user data</button></div>
     <div class="note info" style="margin-top:10px">${planLabel(u.id)}</div>
     <div class="tools"><button class="btn ghost" data-act="plan-add" data-m="1" data-uid="${u.id}">➕ 1 month Pro</button><button class="btn ghost" data-act="plan-add" data-m="3" data-uid="${u.id}">➕ 3 months Pro</button><button class="btn ghost" data-act="plan-trial" data-uid="${u.id}">⏱ Extend trial</button><button class="btn ghost" data-act="plan-reset" data-uid="${u.id}">↺ Reset plan</button></div>
-    ${u.cards.map(c=>`<div class="ucard"><h3>${esc(c.label||"Card")} <span class="pill">${esc(c.type||"personal")}</span></h3>
+    ${u.cards.filter(c=>!c.team).map(c=>`<div class="ucard"><h3>${esc(c.label||"Card")} <span class="pill">${esc(c.type||"personal")}</span></h3>
       <div class="info">${[c.name,c.title,c.company,c.address,c.website,c.officePhone&&"Office: "+c.officePhone,c.businessWhatsApp&&"WhatsApp: "+c.businessWhatsApp].filter(Boolean).map(esc).join(" · ")}</div>
       ${(c.platforms||[]).length?c.platforms.map(p=>`<div class="row edit" data-cid="${c.id}" data-pid="${p.id}">${logo(p.name,40,p.detail)}<input data-f="name" value="${esc(p.name)}"><input data-f="detail" value="${esc(p.detail)}"><button class="ic" data-act="save" title="Save">✓</button><button class="ic danger" data-act="del" title="Delete">🗑</button></div>`).join(""):'<div class="empty">No platforms yet.</div>'}
-      <div class="tools"><button class="btn" data-act="qr" data-cid="${c.id}">🔳 QR &amp; cards</button><button class="btn ghost" data-act="items" data-cid="${c.id}">🛍 Offerings</button><a class="btn ghost" href="${esc(cardUrl(c.id))}" target="_blank" rel="noopener">Open card ↗</a><button class="btn ghost" data-act="delcard" data-cid="${c.id}" style="color:#d6204a">Delete card</button></div></div>`).join("")||'<div class="empty">No cards yet.</div>'}</div></details>`}).join(""):'<div class="empty">No users yet.</div>'}
+      <div class="tools"><button class="btn" data-act="qr" data-cid="${c.id}">🔳 QR &amp; cards</button><button class="btn ghost" data-act="items" data-cid="${c.id}">🛍 Offerings</button><a class="btn ghost" href="${esc(cardUrl(c.id))}" target="_blank" rel="noopener">Open card ↗</a><button class="btn ghost" data-act="delcard" data-cid="${c.id}" style="color:#d6204a">Delete card</button></div></div>`).join("")||(u.cards.length?"":'<div class="empty">No cards yet.</div>')}${teamBlock(u)}</div></details>`}).join(""):'<div class="empty">No users yet.</div>'}
 $("#q").oninput=render;
 
 $("#users").onclick=async e=>{const b=e.target.closest("[data-act]");if(!b)return;const act=b.dataset.act;
@@ -308,13 +311,13 @@ function drawP(a){$("#pRows").innerHTML=a.map((p,i)=>`<div class="row"><input cl
 const rawP=()=>$$("#pRows .row").map(r=>({months:parseInt($(".p-m",r).value,10),price:parseFloat($(".p-p",r).value)}));
 $("#addP").onclick=()=>drawP([...rawP(),{}]);
 $("#p-set").addEventListener("click",e=>{const b=e.target.closest("[data-rmp]");if(!b)return;const a=rawP();a.splice(+b.dataset.rmp,1);drawP(a)});
-$("#saveP").onclick=async()=>{const doc={enabled:$("#pEn").checked,freeLimit:parseInt($("#pFree").value,10)||0,paidLimit:parseInt($("#pPaid").value,10)||50,trialDays:parseInt($("#pTrial").value,10)||0,graceDays:parseInt($("#pGrace").value,10)||0,currency:(SET&&SET.currency)||"GHS",
+$("#saveP").onclick=async()=>{const doc={enabled:$("#pEn").checked,freeLimit:parseInt($("#pFree").value,10)||0,paidLimit:parseInt($("#pPaid").value,10)||50,trialDays:parseInt($("#pTrial").value,10)||0,graceDays:parseInt($("#pGrace").value,10)||0,teamEnabled:$("#pTeamOn").checked,teamMax:parseInt($("#pTeamMax").value,10)||0,currency:(SET&&SET.currency)||"GHS",
     prices:rawP().filter(p=>p.months>0&&p.price>=0).sort((a,b)=>a.months-b.months)};
   try{await db.collection("settings").doc("plans").set(doc);PSET={...DEFAULT_PLANS,...doc};PSTORED=true;renderSettings();render();planSummary();toast("Plan settings saved ✓")}catch(x){console.error(x);toast("Couldn't save. Publish the latest Firestore rules.")}};
 function renderSettings(){const s=SET||DEFAULT_PAYMENT,b=s.bank||{};$("#setNote").classList.toggle("hide",SETSTORED);
   $("#sOpen").checked=s.ordersOpen!==false;$("#sCur").value=s.currency||"GHS";$("#sFee").value=s.deliveryFee??"";$("#sBank").value=b.bankName||"";$("#sBranch").value=b.branch||"";$("#sAcc").value=b.accountNumber||"";$("#sAccName").value=b.accountName||"";
   $("#sPick").value=s.pickupNote||"";$("#sIns").value=s.instructions||"";drawMomo(s.momo||[]);drawTiers(s.tiers||[]);
-  const P=PSET||DEFAULT_PLANS;$("#pNote").classList.toggle("hide",PSTORED);$("#pEn").checked=P.enabled!==false;$("#pFree").value=P.freeLimit;$("#pPaid").value=P.paidLimit;$("#pTrial").value=P.trialDays;$("#pGrace").value=P.graceDays;drawP(P.prices||[])}
+  const P=PSET||DEFAULT_PLANS;$("#pNote").classList.toggle("hide",PSTORED);$("#pEn").checked=P.enabled!==false;$("#pFree").value=P.freeLimit;$("#pPaid").value=P.paidLimit;$("#pTrial").value=P.trialDays;$("#pGrace").value=P.graceDays;$("#pTeamOn").checked=P.teamEnabled!==false;$("#pTeamMax").value=P.teamMax??100;drawP(P.prices||[])}
 $("#addMomo").onclick=()=>drawMomo([...rawMomo(),{}]);$("#addTier").onclick=()=>drawTiers([...rawTiers(),{}]);
 $("#p-set").addEventListener("click",e=>{const b=e.target.closest("[data-rm]");if(!b)return;const i=+b.dataset.i;if(b.dataset.rm==="momo"){const a=rawMomo();a.splice(i,1);drawMomo(a)}else{const a=rawTiers();a.splice(i,1);drawTiers(a)}});
 $("#saveSet").onclick=async()=>{const doc={ordersOpen:$("#sOpen").checked,currency:$("#sCur").value.trim()||"GHS",deliveryFee:parseFloat($("#sFee").value)||0,

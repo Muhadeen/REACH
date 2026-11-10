@@ -37,8 +37,8 @@ async function loadCards(){
     const c={owner:user.uid,type:"personal",label:"Personal",name:udata.name||"My name",title:"",bio:udata.bio||"",photo:udata.photo||"",platforms:udata.platforms||[],company:"",companyLogo:"",address:"",website:"",officePhone:"",businessWhatsApp:"",createdAt:ts(),updatedAt:ts()};
     await db.collection("cards").doc(user.uid).set(c);cards=[{id:user.uid,...c,createdAt:Date.now()}];
   }
-  cards.sort((a,b)=>ms(a.createdAt)-ms(b.createdAt));
-  if(!cur||!cards.some(c=>c.id===cur))cur=cards[0].id;
+  cards.sort((a,b)=>ms(a.createdAt)-ms(b.createdAt));resolveLogos(cards);
+  if(!cur||!cards.some(c=>c.id===cur))cur=(cards.find(c=>!c.team)||cards[0]).id;
 }
 async function onUser(u){
   if(signingUp)return;
@@ -86,11 +86,12 @@ function renderAll(o={}){
   const c=C();
   setAv($("#avatar"),c.photo,c.name);$("#hiName").textContent="Hi, "+String(udata.name||c.name).split(" ")[0]+" 👋";
   $("#hiBio").textContent=cards.length>1?"Editing: "+(c.label||"Card"):(c.title||c.bio||"Add the ways people can reach you.");
-  $("#cardbar").innerHTML=cards.map(k=>`<button class="cp ${k.id===c.id?"on":""}" data-id="${k.id}">${TYPE_ICON[k.type]||"🙂"} ${esc(k.label||"Card")}</button>`).join("")+'<button class="cp add" id="newCardBtn">＋ New card</button>';
+  const own=cards.filter(k=>!k.team),teamN=cards.length-own.length,shown=own.concat(c.team?[c]:[]);
+  $("#cardbar").innerHTML=shown.map(k=>`<button class="cp ${k.id===c.id?"on":""}" data-id="${k.id}">${k.team?"👥":TYPE_ICON[k.type]||"🙂"} ${esc(k.label||"Card")}</button>`).join("")+`<button class="cp" id="teamBtn">👥 Team (${teamN})</button><button class="cp add" id="newCardBtn">＋ New card</button>`;
   renderList();o.keepForm?renderDetailImages():renderDetails();renderShare();
   if(tab==="print")renderPrint();if(tab==="stats")renderStats();if(tab==="offer")renderOffer();
 }
-$("#cardbar").onclick=e=>{const b=e.target.closest("button");if(!b)return;if(b.id==="newCardBtn")return openNew();cur=b.dataset.id;editing=null;renderAll()};
+$("#cardbar").onclick=e=>{const b=e.target.closest("button");if(!b)return;if(b.id==="newCardBtn")return openNew();if(b.id==="teamBtn")return setTab("team");cur=b.dataset.id;editing=null;renderAll()};
 
 function renderList(){const pl=C().platforms||[];$("#count").textContent=pl.length;
   $("#list").innerHTML=pl.length?pl.map(p=>p.id===editing?
@@ -104,8 +105,8 @@ async function saveCard(patch,msg,o){const c=C();Object.assign(c,patch);
 
 /* tabs */
 $("#tabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;setTab(b.dataset.t)};
-function setTab(t){tab=t;$$("#tabs button").forEach(x=>x.classList.toggle("on",x.dataset.t===t));["links","details","offer","print","orders","inbox","stats"].forEach(k=>$("#pane-"+k).classList.toggle("hide",k!==t));
-  if(t==="print")renderPrint();if(t==="orders")renderOrders();if(t==="stats")renderStats();if(t==="offer")renderOffer();if(t==="inbox")refreshInbox()}
+function setTab(t){tab=t;$$("#tabs button").forEach(x=>x.classList.toggle("on",x.dataset.t===t));["links","details","offer","team","print","orders","inbox","stats"].forEach(k=>$("#pane-"+k).classList.toggle("hide",k!==t));
+  if(t==="print")renderPrint();if(t==="orders")renderOrders();if(t==="stats")renderStats();if(t==="offer")renderOffer();if(t==="team")renderTeam();if(t==="inbox")refreshInbox()}
 
 /* ---------- platforms ---------- */
 $("#quick").onclick=e=>{const b=e.target.closest(".q");if(!b)return;$("#pName").value=displayName(b.dataset.n);$("#pName").oninput();$("#pDet").focus()};
@@ -150,7 +151,7 @@ $("#rmLogo").onclick=()=>saveCard({companyLogo:""},"Logo removed",{keepForm:true
 
 $("#delCard").onclick=async()=>{if(cards.length<2)return toast("You need at least one card.");const c=C();
   if(!confirm("Delete the card “"+(c.label||c.name)+"”? Its QR code will stop working."))return;
-  try{await db.collection("cards").doc(c.id).delete();cards=cards.filter(k=>k.id!==c.id);cur=cards[0].id;hits=null;renderAll();toast("Card deleted")}catch(e){toast("Couldn't delete")}};
+  try{await db.collection("cards").doc(c.id).delete();cards=cards.filter(k=>k.id!==c.id);cur=(cards.find(k=>!k.team)||cards[0]).id;hits=null;renderAll();toast("Card deleted")}catch(e){toast("Couldn't delete")}};
 
 /* new card */
 function openNew(){newType="personal";$$("#types button").forEach(b=>b.classList.toggle("on",b.dataset.t==="personal"));$("#nLabel").value="";$("#mNew").classList.remove("hide");$("#nLabel").focus()}
@@ -243,7 +244,7 @@ async function renderOrders(force){
   try{if(!settings||force)settings=await getSettings(db);await loadOrders()}
   catch(e){console.error(e);$("#ordList").innerHTML='<div class="empty">Couldn\'t load orders. The database rules may need updating.</div>';return}
   const open=settings.ordersOpen!==false;$("#ordPaused").classList.toggle("hide",open);$("#ordForm").classList.toggle("hide",!open);
-  const sel=$("#oCard"),keep=sel.value;sel.innerHTML=cards.map(c=>`<option value="${c.id}">${esc(c.label||c.name)} · ${esc(c.name)}</option>`).join("");sel.value=cards.some(c=>c.id===keep)?keep:C().id;
+  const sel=$("#oCard"),keep=sel.value;const opts=cards.filter(c=>!c.team||c.id===cur);sel.innerHTML=opts.map(c=>`<option value="${c.id}">${esc(c.label||c.name)} · ${esc(c.name)}</option>`).join("");sel.value=opts.some(c=>c.id===keep)?keep:C().id;
   if(!$("#oName").value)$("#oName").value=C().name||"";
   const tiers=[...(settings.tiers||[])].sort((a,b)=>a.qty-b.qty);
   $("#oQty").innerHTML=tiers.map(t=>`<button type="button" class="cp ${+oQty===+t.qty?"on":""}" data-q="${t.qty}">${t.qty} cards · ${money(t.price,settings.currency)}</button>`).join("");

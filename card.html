@@ -42,7 +42,8 @@ function msg(t,s){$("#page").innerHTML=`<div class="card" style="text-align:cent
   try{
     const {db,auth}=await fb();const snap=await db.collection("cards").doc(id).get();
     if(!snap.exists)return msg("Card not found","It may have been deleted, or the link is wrong.");
-    const d=snap.data(),lines=contactLines(d),th=cardTheme(d);document.title=d.name+" · REACH";
+    const d=snap.data();if(d.logoRef&&!d.companyLogo){try{const t=await db.collection("cards").doc(d.logoRef).get();if(t.exists)d.companyLogo=t.data().companyLogo||""}catch(e){}}
+    const lines=contactLines(d),th=cardTheme(d);document.title=d.name+" · REACH";
     const photo=safeImg(d.photo),clogo=safeImg(d.companyLogo),sc=d.showcase||{};
     let showcaseHtml="",cbarHtml="",cfgCur="GHS";
     if(sc.on){try{const [cfg,ps,is]=await Promise.all([getPlansCfg(db),db.collection("plans").doc(d.owner).get(),db.collection("items").where("cardId","==",id).get()]);

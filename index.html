@@ -119,6 +119,7 @@ select{appearance:auto}
 .msgc{background:#fff;border:1.5px solid var(--line);border-radius:20px;padding:14px 16px;margin-top:12px}.msgc.new{border-color:#9fbaff;background:#f6f9ff}
 .msgc .mh{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}.msgc p{margin-top:6px;font-weight:600;overflow-wrap:anywhere;white-space:pre-line}
 .tick{display:flex;align-items:center;gap:10px;font-weight:700;cursor:pointer;margin:14px 0 0}.tick input{width:auto;accent-color:#2563ff}
+.tw{overflow-x:auto;border:1.5px solid var(--line);border-radius:16px;margin-top:10px}.tbl{width:100%;border-collapse:collapse;font-size:.85rem}.tbl th,.tbl td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}.tbl th{background:#f1f6ff;font-weight:800;color:var(--muted)}.tbl tr.skip td{opacity:.55}
 </style></head><body>
 <header class="top"><a class="brand" href="./"><img src="logo-mark.png" alt="">REACH</a>
 <nav id="nav" class="nav" aria-label="Main"></nav>
@@ -179,7 +180,7 @@ select{appearance:auto}
   <div class="cardbar" id="cardbar"></div>
   <div class="grid">
     <div class="main">
-      <div class="apptabs" id="tabs"><button data-t="links" class="on">🔗 Platforms</button><button data-t="details">📝 Details</button><button data-t="offer">🛍 Offerings</button><button data-t="print">🖨 Print card</button><button data-t="orders">🛒 Orders</button><button data-t="inbox">📥 Inbox <span id="inBadge"></span></button><button data-t="stats">📊 Analytics</button></div>
+      <div class="apptabs" id="tabs"><button data-t="links" class="on">🔗 Platforms</button><button data-t="details">📝 Details</button><button data-t="offer">🛍 Offerings</button><button data-t="team">👥 Team</button><button data-t="print">🖨 Print card</button><button data-t="orders">🛒 Orders</button><button data-t="inbox">📥 Inbox <span id="inBadge"></span></button><button data-t="stats">📊 Analytics</button></div>
 
       <div class="pane" id="pane-links">
         <div class="card addcard">
@@ -269,6 +270,32 @@ select{appearance:auto}
         <div class="card"><h2>Inbox <span class="pill" id="inCount">0</span></h2><p class="sub">Messages from people who scanned your card. Reply by call or WhatsApp using the number they left.</p><div id="inList"></div></div>
       </div>
 
+      <div class="pane hide" id="pane-team">
+        <div class="card">
+          <h2>Team cards</h2><p class="sub">Create a card for every employee from one Excel or CSV file. They all use the same design and company details, and you can edit each card afterwards.</p>
+          <div class="note info hide" id="tmOff"></div>
+          <div id="tmBody">
+            <h3 class="ah" style="margin-top:6px">1. Choose your template card</h3>
+            <p class="hint" style="margin:0 0 8px">The company name, logo, address, website, office phone, business WhatsApp and colour are copied from this card.</p>
+            <select id="tmTpl"></select><div class="note info" id="tmTplNote" style="margin-top:8px"></div>
+            <h3 class="ah">2. Get the sample file</h3>
+            <button class="btn ghost" id="tmSample" type="button">⬇ Download the sample file</button>
+            <p class="hint">Open it in Excel, replace the sample rows with your employees, and save it.</p>
+            <h3 class="ah">3. Upload your file</h3>
+            <input type="file" id="tmFile" accept=".csv,.xlsx,.xls,text/csv">
+            <p class="hint">Excel (.xlsx or .xls) or CSV. Tip: format phone columns as <b>Text</b> in Excel so numbers keep their leading zero.</p>
+            <div id="tmPrev"></div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Your team <span class="pill" id="tmCount">0</span></h2><p class="sub">Edit, preview or download any card. Deleting your template card removes the shared logo from these cards.</p>
+          <div class="copy" style="margin-bottom:10px"><input id="tmSearch" type="search" placeholder="Search your team…"></div>
+          <div class="btnrow" style="margin:0 0 8px"><button class="btn ghost sm" id="tmZipQr" type="button">⬇ All QR images (zip)</button><button class="btn ghost sm" id="tmZipCards" type="button">⬇ All card previews (zip)</button><button class="btn ghost sm" id="tmCsv" type="button">⬇ List with card links (CSV)</button></div>
+          <div id="tmList"></div>
+          <button class="btn ghost sm hide" id="tmDelAll" type="button" style="margin-top:12px;color:#d6204a">Delete all team cards</button>
+        </div>
+      </div>
+
       <div class="pane hide" id="pane-print">
         <div class="card">
           <h2>Printable business card</h2><p class="sub">Standard size, 3.5 × 2 in. Details on the front, QR code on the back.</p>
@@ -351,4 +378,5 @@ select{appearance:auto}
 <script src="core.js"></script>
 <script src="cardgen.js"></script>
 <script src="app.js"></script>
+<script src="team.js"></script>
 </body></html>

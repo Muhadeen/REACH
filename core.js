@@ -365,7 +365,7 @@ const dataUrlKB=s=>Math.round((s||"").length*0.75/1024);
 
 /* ================= "What we offer" showcase: plans, trial, limits ================= */
 /* Starter values. Admin > Settings > Plans overrides these. Prices are examples. */
-const DEFAULT_PLANS={enabled:true,freeLimit:5,paidLimit:50,trialDays:10,graceDays:5,currency:"GHS",
+const DEFAULT_PLANS={enabled:true,freeLimit:5,paidLimit:50,trialDays:10,graceDays:5,teamEnabled:true,teamMax:100,currency:"GHS",
   prices:[{months:1,price:40},{months:3,price:108},{months:12,price:384}]};
 async function getPlansCfg(db){try{const s=await db.collection("settings").doc("plans").get();return s.exists?{...DEFAULT_PLANS,...s.data()}:{...DEFAULT_PLANS}}catch(e){return{...DEFAULT_PLANS}}}
 const DAY=864e5;
@@ -384,3 +384,6 @@ function dateShort(t){return t?new Date(t).toLocaleDateString("en-GB",{day:"nume
 /* fills <span data-cfg="trialDays"> etc. on the info pages with the live plan settings */
 function fillCfg(){const set=cf=>{$$("[data-cfg]").forEach(e=>{const k=e.dataset.cfg;if(k==="prices")e.innerHTML=(cf.prices||[]).length?cf.prices.map(p=>`<span class="pill" style="margin-right:6px">${p.months} month${p.months>1?"s":""} · ${money(p.price,cf.currency)}</span>`).join(""):"Prices are shown when you upgrade.";else e.textContent=cf[k]})};
   set(DEFAULT_PLANS);fb().then(f=>getPlansCfg(f.db)).then(set).catch(()=>{})}
+
+/* team cards share the company logo of their template card instead of storing a copy on every card */
+function resolveLogos(list){const by={};list.forEach(x=>by[x.id]=x);list.forEach(x=>{if(x.logoRef&&!x.companyLogo&&by[x.logoRef])x.companyLogo=by[x.logoRef].companyLogo||""});return list}
